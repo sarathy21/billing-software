@@ -1,0 +1,13 @@
+node_modules/
+dist/
+out/
+release/
+*.log
+electron-start.log
+.tmp-*.log
+database/billing.db
+*.db-journal
+*.db-shm
+*.db-wal
+.env
+.vscode/

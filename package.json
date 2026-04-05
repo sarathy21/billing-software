@@ -1,0 +1,51 @@
+{
+  "name": "billing-software",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3",
+    "css": "tailwindcss -i ./renderer/style.css -o ./renderer/output.css --watch",
+    "css:build": "tailwindcss -i ./renderer/style.css -o ./renderer/output.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sarathy21/billing-software.git"
+  },
+  "build": {
+    "appId": "com.sarat.billingsoftware",
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "signAndEditExecutable": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "sarathy21",
+        "repo": "billing-software",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "electron-updater": "^6.8.3"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "@tailwindcss/cli": "^4.1.13",
+    "autoprefixer": "^10.4.27",
+    "electron": "^41.1.1",
+    "electron-builder": "^26.8.1",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2"
+  }
+}
