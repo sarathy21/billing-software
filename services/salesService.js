@@ -1,15 +1,23 @@
 const db = require('../database/db');
 
 const insertSaleStmt = db.prepare(
-  `INSERT INTO sales (date, party_id, type, discount, delivery_charges, total)
-   VALUES (?, ?, ?, ?, ?, ?)`
+  `INSERT INTO sales (
+    date, party_id, godown_id, type, bill_no, bill_name, party_address,
+    bill_time, delivery_date, vehicle_no, delivery_place, delivery_time, delivery_feedback, delivery_details,
+    discount, delivery_charges, packing_charges, total
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 );
 
 const updateSaleStmt = db.prepare(
   `UPDATE sales
-  SET date = ?, party_id = ?, type = ?, discount = ?, delivery_charges = ?, total = ?
+  SET date = ?, party_id = ?, godown_id = ?, type = ?, bill_no = ?, bill_name = ?, party_address = ?,
+      bill_time = ?, delivery_date = ?, vehicle_no = ?, delivery_place = ?, delivery_time = ?, delivery_feedback = ?, delivery_details = ?,
+      discount = ?, delivery_charges = ?, packing_charges = ?, total = ?
    WHERE id = ?`
 );
+
+const updateSaleBillNoStmt = db.prepare(`UPDATE sales SET bill_no = ? WHERE id = ?`);
 
 const deleteSaleStmt = db.prepare(`DELETE FROM sales WHERE id = ?`);
 
@@ -37,16 +45,34 @@ const getStockByProductStmt = db.prepare(
    WHERE product_id = ?`
 );
 
+const getGodownStockByProductStmt = db.prepare(
+  `SELECT godown_id, product_id, total_boxes, total_pieces
+   FROM godown_stock
+   WHERE godown_id = ? AND product_id = ?`
+);
+
 const reduceStockStmt = db.prepare(
   `UPDATE stock
    SET total_boxes = total_boxes - ?, total_pieces = total_pieces - ?
    WHERE product_id = ?`
 );
 
+const reduceGodownStockStmt = db.prepare(
+  `UPDATE godown_stock
+   SET total_boxes = total_boxes - ?, total_pieces = total_pieces - ?
+   WHERE godown_id = ? AND product_id = ?`
+);
+
 const increaseStockStmt = db.prepare(
   `UPDATE stock
    SET total_boxes = total_boxes + ?, total_pieces = total_pieces + ?
    WHERE product_id = ?`
+);
+
+const increaseGodownStockStmt = db.prepare(
+  `UPDATE godown_stock
+   SET total_boxes = total_boxes + ?, total_pieces = total_pieces + ?
+   WHERE godown_id = ? AND product_id = ?`
 );
 
 const insertLedgerStmt = db.prepare(
@@ -57,7 +83,39 @@ const insertLedgerStmt = db.prepare(
 const deleteLedgerBySaleStmt = db.prepare(`DELETE FROM ledger WHERE sale_id = ? OR particulars = ?`);
 
 function normalizeSaleType(type) {
-  return String(type || '').toLowerCase() === 'cash' ? 'cash' : 'credit';
+  const normalized = String(type || '').trim().toLowerCase();
+  if (normalized === 'cash') {
+    return 'cash';
+  }
+  if (normalized === 'upi') {
+    return 'upi';
+  }
+  if (normalized === 'cheque' || normalized === 'check') {
+    return 'cheque';
+  }
+  if (
+    normalized === 'bank transfer'
+    || normalized === 'bank transaction'
+    || normalized === 'bank'
+    || normalized === 'bank_transfer'
+  ) {
+    return 'bank transfer';
+  }
+  // Keep backward compatibility with older rows.
+  if (normalized === 'credit') {
+    return 'credit';
+  }
+  return 'cash';
+}
+
+function getSaleSettlementAccount(saleType) {
+  if (saleType === 'credit') {
+    return 'Party';
+  }
+  if (saleType === 'cash') {
+    return 'Cash';
+  }
+  return 'Bank';
 }
 
 function normalizeUnitType(unitType) {
@@ -104,7 +162,8 @@ function normalizeSaleItems(items) {
   }).filter((item) => item.productId > 0 && item.boxes > 0 && item.piecesPerBox > 0 && !!item.unitType && item.rate >= 0);
 }
 
-function applySaleStockReduction(items) {
+function applySaleStockReduction(items, godownId) {
+  const selectedGodownId = Number(godownId) || 0;
   for (const item of items) {
     const product = getProductByIdStmt.get(item.productId);
     if (!product) {
@@ -119,40 +178,65 @@ function applySaleStockReduction(items) {
         message: `Insufficient stock for ${product.name}`
       };
     }
+
+    if (selectedGodownId > 0) {
+      const godownStock = getGodownStockByProductStmt.get(selectedGodownId, item.productId);
+      if (!godownStock || godownStock.total_boxes < item.boxes || godownStock.total_pieces < requiredPieces) {
+        return {
+          success: false,
+          message: `Insufficient stock in selected godown for ${product.name}`
+        };
+      }
+    }
   }
 
   items.forEach((item) => {
     const removePieces = item.boxes * item.piecesPerBox;
     reduceStockStmt.run(item.boxes, removePieces, item.productId);
+    if (selectedGodownId > 0) {
+      reduceGodownStockStmt.run(item.boxes, removePieces, selectedGodownId, item.productId);
+    }
   });
 
   return { success: true };
 }
 
-function rollbackSaleStock(items) {
+function rollbackSaleStock(items, godownId) {
+  const selectedGodownId = Number(godownId) || 0;
   items.forEach((item) => {
     const addPieces = item.boxes * item.pieces;
     increaseStockStmt.run(item.boxes, addPieces, item.product_id);
+    if (selectedGodownId > 0) {
+      increaseGodownStockStmt.run(item.boxes, addPieces, selectedGodownId, item.product_id);
+    }
   });
 }
 
 function writeSaleLedgerEntries(saleId, saleDate, partyId, saleType, total) {
   const particulars = `Sale #${saleId}`;
-  if (saleType === 'cash') {
-    insertLedgerStmt.run(saleDate, null, null, saleId, partyId, 'debit', 'Cash', particulars, total, particulars);
-    insertLedgerStmt.run(saleDate, null, null, saleId, partyId, 'credit', 'Sales', particulars, total, particulars);
-  } else {
-    insertLedgerStmt.run(saleDate, null, null, saleId, partyId, 'debit', 'Party', particulars, total, particulars);
-    insertLedgerStmt.run(saleDate, null, null, saleId, partyId, 'credit', 'Sales', particulars, total, particulars);
-  }
+  const settlementAccount = getSaleSettlementAccount(saleType);
+  insertLedgerStmt.run(saleDate, null, null, saleId, partyId, 'debit', settlementAccount, particulars, total, particulars);
+  insertLedgerStmt.run(saleDate, null, null, saleId, partyId, 'credit', 'Sales', particulars, total, particulars);
 }
 
 const addSaleTxn = db.transaction((data) => {
   const saleDate = data.date || new Date().toISOString().slice(0, 10);
   const partyId = Number(data.party_id);
+  const godownId = Number(data.godown_id) || null;
   const saleType = normalizeSaleType(data.type);
+  const requestedBillNo = String(data.bill_no || '').trim();
+  const billName = String(data.bill_name || '').trim();
+  const partyAddress = String(data.party_address || '').trim();
+  const billTime = String(data.bill_time || '').trim();
+  const deliveryDate = String(data.delivery_date || '').trim();
+  const vehicleNo = String(data.vehicle_no || '').trim();
+  const deliveryPlace = String(data.delivery_place || '').trim();
+  const deliveryTime = String(data.delivery_time || '').trim();
+  const deliveryFeedback = String(data.delivery_feedback || '').trim();
+  const deliveryDetails = String(data.delivery_details || '').trim();
   const discount = Number(data.discount) || 0;
   const deliveryCharges = Number(data.delivery_charges) || 0;
+  const packingCharges = Number(data.packing_charges) || 0;
   const items = normalizeSaleItems(data.items);
 
   if (!partyId || items.length === 0) {
@@ -160,15 +244,38 @@ const addSaleTxn = db.transaction((data) => {
   }
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const finalTotal = Math.max(0, subtotal - discount) + deliveryCharges;
+  const finalTotal = Math.max(0, subtotal - discount) + deliveryCharges + packingCharges;
 
-  const stockCheck = applySaleStockReduction(items);
+  const stockCheck = applySaleStockReduction(items, godownId);
   if (!stockCheck.success) {
     return stockCheck;
   }
 
-  const saleResult = insertSaleStmt.run(saleDate, partyId, saleType, discount, deliveryCharges, finalTotal);
+  const saleResult = insertSaleStmt.run(
+    saleDate,
+    partyId,
+    godownId,
+    saleType,
+    requestedBillNo || null,
+    billName,
+    partyAddress,
+    billTime,
+    deliveryDate,
+    vehicleNo,
+    deliveryPlace,
+    deliveryTime,
+    deliveryFeedback,
+    deliveryDetails,
+    discount,
+    deliveryCharges,
+    packingCharges,
+    finalTotal
+  );
   const saleId = Number(saleResult.lastInsertRowid);
+  const effectiveBillNo = requestedBillNo || String(saleId);
+  if (!requestedBillNo) {
+    updateSaleBillNoStmt.run(effectiveBillNo, saleId);
+  }
 
   items.forEach((item) => {
     insertSaleItemStmt.run(
@@ -194,27 +301,59 @@ const updateSaleTxn = db.transaction((id, data) => {
   }
 
   const oldItems = getSaleItemsStmt.all(saleId);
-  rollbackSaleStock(oldItems);
+  rollbackSaleStock(oldItems, existingSale.godown_id);
 
   const saleDate = data.date || existingSale.date;
   const partyId = Number(data.party_id) || existingSale.party_id;
+  const godownId = Number(data.godown_id) || Number(existingSale.godown_id) || null;
   const saleType = normalizeSaleType(data.type || existingSale.type);
+  const billNo = String(data.bill_no ?? existingSale.bill_no ?? saleId).trim() || String(saleId);
+  const billName = String(data.bill_name ?? existingSale.bill_name ?? '').trim();
+  const partyAddress = String(data.party_address ?? existingSale.party_address ?? '').trim();
+  const billTime = String(data.bill_time ?? existingSale.bill_time ?? '').trim();
+  const deliveryDate = String(data.delivery_date ?? existingSale.delivery_date ?? '').trim();
+  const vehicleNo = String(data.vehicle_no ?? existingSale.vehicle_no ?? '').trim();
+  const deliveryPlace = String(data.delivery_place ?? existingSale.delivery_place ?? '').trim();
+  const deliveryTime = String(data.delivery_time ?? existingSale.delivery_time ?? '').trim();
+  const deliveryFeedback = String(data.delivery_feedback ?? existingSale.delivery_feedback ?? '').trim();
+  const deliveryDetails = String(data.delivery_details ?? existingSale.delivery_details ?? '').trim();
   const discount = Number(data.discount) || 0;
   const deliveryCharges = Number(data.delivery_charges) || 0;
+  const packingCharges = Number(data.packing_charges) || 0;
   const items = normalizeSaleItems(data.items);
   if (items.length === 0) {
     return { success: false, message: 'No valid sale items' };
   }
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const finalTotal = Math.max(0, subtotal - discount) + deliveryCharges;
+  const finalTotal = Math.max(0, subtotal - discount) + deliveryCharges + packingCharges;
 
-  const stockCheck = applySaleStockReduction(items);
+  const stockCheck = applySaleStockReduction(items, godownId);
   if (!stockCheck.success) {
     return stockCheck;
   }
 
-  updateSaleStmt.run(saleDate, partyId, saleType, discount, deliveryCharges, finalTotal, saleId);
+  updateSaleStmt.run(
+    saleDate,
+    partyId,
+    godownId,
+    saleType,
+    billNo,
+    billName,
+    partyAddress,
+    billTime,
+    deliveryDate,
+    vehicleNo,
+    deliveryPlace,
+    deliveryTime,
+    deliveryFeedback,
+    deliveryDetails,
+    discount,
+    deliveryCharges,
+    packingCharges,
+    finalTotal,
+    saleId
+  );
   deleteSaleItemsStmt.run(saleId);
   items.forEach((item) => {
     insertSaleItemStmt.run(
@@ -241,7 +380,7 @@ const deleteSaleTxn = db.transaction((id) => {
   }
 
   const oldItems = getSaleItemsStmt.all(saleId);
-  rollbackSaleStock(oldItems);
+  rollbackSaleStock(oldItems, existingSale.godown_id);
   deleteSaleItemsStmt.run(saleId);
   deleteLedgerBySaleStmt.run(saleId, `Sale #${saleId}`);
   const result = deleteSaleStmt.run(saleId);
@@ -292,6 +431,18 @@ function getSaleDetails(id) {
 
     return {
       ...sale,
+      godown_id: sale.godown_id,
+      bill_no: String(sale.bill_no || sale.id || ''),
+      bill_name: sale.bill_name || '',
+      party_address: sale.party_address || '',
+      bill_time: sale.bill_time || '',
+      delivery_date: sale.delivery_date || '',
+      vehicle_no: sale.vehicle_no || '',
+      delivery_place: sale.delivery_place || '',
+      delivery_time: sale.delivery_time || '',
+      delivery_feedback: sale.delivery_feedback || '',
+      delivery_details: sale.delivery_details || '',
+      packing_charges: Number(sale.packing_charges) || 0,
       items
     };
   } catch (_error) {
@@ -302,12 +453,22 @@ function getSaleDetails(id) {
 function getSales() {
   try {
     const stmt = db.prepare(
-      `SELECT s.id, s.date, s.party_id, p.name AS party_name, s.type, s.discount, s.delivery_charges, s.total,
+      `SELECT s.id, s.date, s.party_id, s.godown_id, p.name AS party_name, s.type,
+              s.discount, s.delivery_charges, s.packing_charges,
+              COALESCE(s.bill_no, CAST(s.id AS TEXT)) AS bill_no,
+              s.bill_name, s.party_address, s.bill_time, s.delivery_date, s.vehicle_no,
+              s.delivery_place, s.delivery_time, s.delivery_feedback, s.delivery_details,
+              s.total,
               COUNT(si.id) AS item_count
        FROM sales s
        JOIN parties p ON p.id = s.party_id
        LEFT JOIN sale_items si ON si.sale_id = s.id
-       GROUP BY s.id, s.date, s.party_id, p.name, s.type, s.discount, s.delivery_charges, s.total
+       GROUP BY s.id, s.date, s.party_id, s.godown_id, p.name, s.type,
+                s.discount, s.delivery_charges, s.packing_charges,
+                s.bill_no,
+                s.bill_name, s.party_address, s.bill_time, s.delivery_date, s.vehicle_no,
+                s.delivery_place, s.delivery_time, s.delivery_feedback, s.delivery_details,
+                s.total
        ORDER BY s.date DESC, s.id DESC`
     );
     return stmt.all();

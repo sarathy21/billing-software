@@ -3,6 +3,48 @@
 <head>
   <title>Billing Software</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background-color: #cbd5e1;
+      border-radius: 9999px;
+      transition: 0.2s;
+    }
+
+    .toggle-slider::before {
+      position: absolute;
+      content: '';
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      top: 3px;
+      background-color: #ffffff;
+      border-radius: 9999px;
+      transition: 0.2s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #2563eb;
+    }
+
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translateX(20px);
+    }
+  </style>
 </head>
 <body class="bg-gray-100">
   <div class="flex h-screen">
@@ -10,14 +52,15 @@
       <div>
         <h1 id="appTitle" class="text-xl font-bold mb-4">Billing Software</h1>
         <div class="space-y-2">
-          <button data-nav-view="sales" onclick="showView('sales')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Estimated Sales Invoice</button>
-          <div class="ml-5 mt-1 space-y-1">
-            <button data-nav-view="purchase" onclick="showView('purchase')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Purchase Entry</button>
-            <button data-nav-view="paymentIn" onclick="showView('paymentIn')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Payment IN</button>
-            <button data-nav-view="paymentOut" onclick="showView('paymentOut')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Payment OUT</button>
-          </div>
+          <button data-nav-view="transaction" onclick="showView('transaction')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Transaction Entry</button>
+          <button data-nav-view="paymentIn" onclick="showView('paymentIn')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Payment IN</button>
+          <button data-nav-view="paymentOut" onclick="showView('paymentOut')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Payment OUT</button>
           <button data-nav-view="ledger" onclick="showView('ledger')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Ledger</button>
           <button data-nav-view="stock" onclick="showView('stock')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Godown Stock</button>
+          <button data-nav-view="rawMaterialStock" onclick="showView('rawMaterialStock')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Raw Material Stock</button>
+          <button data-nav-view="rawMaterialEntry" onclick="showView('rawMaterialEntry')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Product IN / OUT</button>
+          <button data-nav-view="rawMaterialLedger" onclick="showView('rawMaterialLedger')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Raw Material Ledger</button>
+          <button data-nav-view="labourAttendance" onclick="showView('labourAttendance')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Labour Attendance</button>
           <button data-nav-view="profitLoss" onclick="showView('profitLoss')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Profit &amp; Loss</button>
           <button data-nav-view="crackers" onclick="showView('crackers')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Crackers Purchase Rate</button>
           <button data-nav-view="party" onclick="showView('party')" class="w-full text-left bg-blue-800 hover:bg-blue-900 px-3 py-2 rounded transition">Party's Address</button>
@@ -32,83 +75,175 @@
     </aside>
 
     <main class="flex-1 p-6 overflow-y-auto">
-      <section id="partyView" class="hidden">
-        <h2 class="text-2xl font-semibold mb-4">Party Master</h2>
+      <section id="transactionView" class="hidden">
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <h2 class="text-2xl font-semibold">Transaction Entry</h2>
+        </div>
 
-        <div class="bg-white p-4 rounded shadow mb-6">
-          <input id="editingPartyId" type="hidden">
+        <div id="transactionModePicker" class="bg-white p-4 rounded shadow mb-4">
+          <h3 class="text-lg font-semibold mb-3">Choose Entry Type</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input id="name" placeholder="Name" class="border p-2">
-            <input id="city" placeholder="City" class="border p-2">
-            <select id="state" class="border p-2">
-              <option value="">Select State / UT</option>
-              <option value="Andhra Pradesh">Andhra Pradesh</option>
-              <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-              <option value="Assam">Assam</option>
-              <option value="Bihar">Bihar</option>
-              <option value="Chhattisgarh">Chhattisgarh</option>
-              <option value="Goa">Goa</option>
-              <option value="Gujarat">Gujarat</option>
-              <option value="Haryana">Haryana</option>
-              <option value="Himachal Pradesh">Himachal Pradesh</option>
-              <option value="Jharkhand">Jharkhand</option>
-              <option value="Karnataka">Karnataka</option>
-              <option value="Kerala">Kerala</option>
-              <option value="Madhya Pradesh">Madhya Pradesh</option>
-              <option value="Maharashtra">Maharashtra</option>
-              <option value="Manipur">Manipur</option>
-              <option value="Meghalaya">Meghalaya</option>
-              <option value="Mizoram">Mizoram</option>
-              <option value="Nagaland">Nagaland</option>
-              <option value="Odisha">Odisha</option>
-              <option value="Punjab">Punjab</option>
-              <option value="Rajasthan">Rajasthan</option>
-              <option value="Sikkim">Sikkim</option>
-              <option value="Tamil Nadu">Tamil Nadu</option>
-              <option value="Telangana">Telangana</option>
-              <option value="Tripura">Tripura</option>
-              <option value="Uttar Pradesh">Uttar Pradesh</option>
-              <option value="Uttarakhand">Uttarakhand</option>
-              <option value="West Bengal">West Bengal</option>
-              <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-              <option value="Chandigarh">Chandigarh</option>
-              <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-              <option value="Delhi">Delhi</option>
-              <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-              <option value="Ladakh">Ladakh</option>
-              <option value="Lakshadweep">Lakshadweep</option>
-              <option value="Puducherry">Puducherry</option>
-            </select>
-            <input id="phone" placeholder="Phone" class="border p-2">
-            <textarea id="address" placeholder="Address" class="border p-2 md:col-span-2" rows="3"></textarea>
-            <textarea id="feedback" placeholder="Feedback" class="border p-2 md:col-span-2" rows="2"></textarea>
+            <button onclick="beginTransactionPartySelection('purchase')" class="bg-blue-700 text-white px-4 py-3 rounded text-left">Purchase Entry</button>
+            <button onclick="beginTransactionPartySelection('sale')" class="bg-indigo-700 text-white px-4 py-3 rounded text-left">Sales Entry</button>
+            <button onclick="beginReturnEntry('purchase_return')" class="bg-amber-600 text-white px-4 py-3 rounded text-left">Purchase Return</button>
+            <button onclick="beginReturnEntry('sales_return')" class="bg-rose-600 text-white px-4 py-3 rounded text-left">Sales Return</button>
+          </div>
+        </div>
+
+        <div id="transactionPartyPicker" class="hidden bg-white p-4 rounded shadow mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 id="transactionPartyTitle" class="text-lg font-semibold">Party List</h3>
+            <div>
+              <button onclick="addTransactionParty()" class="bg-green-700 text-white px-3 py-2 rounded mr-2">Add Party</button>
+              <button onclick="backToTransactionTypePicker()" class="bg-gray-500 text-white px-3 py-2 rounded">Back</button>
+            </div>
           </div>
 
-          <button id="submitBtn" onclick="addOrUpdateParty()" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Add</button>
+          <input id="transactionPartySearch" oninput="renderTransactionPartyTable()" class="border p-2 w-full mb-3" placeholder="Search by party / phone / city">
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="p-2 text-left">S.No</th>
+                  <th class="p-2 text-left">Party Name</th>
+                  <th class="p-2 text-left">Phone No.</th>
+                  <th class="p-2 text-left">City</th>
+                  <th class="p-2 text-left">Action</th>
+                </tr>
+              </thead>
+              <tbody id="transactionPartyTableBody"></tbody>
+            </table>
+          </div>
         </div>
+
+        <div id="purchaseTxnPanel" class="hidden">
+        <h3 class="text-2xl font-semibold mb-4">Purchase Entry</h3>
 
         <div class="bg-white p-4 rounded shadow mb-4">
-          <input id="searchInput" oninput="searchParties()" placeholder="Search by name, city, state, phone or address" class="border p-2 w-full">
+          <input id="editingPurchaseId" type="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label class="block mb-1">Bill No</label>
+              <input id="purchaseBillNo" class="border p-2 w-full" placeholder="Auto Bill No">
+            </div>
+            <div>
+              <label class="block mb-1">Date</label>
+              <input id="purchaseDate" type="date" class="border p-2 w-full">
+            </div>
+            <div>
+              <label class="block mb-1">Supplier Name</label>
+              <select id="purchasePartyId" class="border p-2 w-full" onchange="onPurchasePartyChange()"><option value="">Select Party</option></select>
+            </div>
+            <div>
+              <label class="block mb-1">Godown</label>
+              <select id="purchaseGodownId" class="border p-2 w-full"><option value="">Select Godown</option></select>
+            </div>
+          </div>
+
+          <h3 class="text-lg font-semibold mt-4 mb-2">Add Item</h3>
+          <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-3">
+            <input id="purchaseProductName" placeholder="Particulars" class="border p-2">
+            <input id="purchaseBoxes" type="number" placeholder="Case Count" class="border p-2" oninput="calculatePurchaseLineTotal()">
+            <input id="purchasePieces" type="number" placeholder="Per Qty/Case" class="border p-2" oninput="calculatePurchaseLineTotal()">
+            <select id="purchaseUnitType" class="border p-2">
+              <option value="Pcs">Pcs</option>
+              <option value="Box">Box</option>
+              <option value="Unit">Unit</option>
+              <option value="Pkt">Pkt</option>
+            </select>
+            <input id="purchaseRate" type="number" step="0.01" placeholder="Rate" class="border p-2" oninput="calculatePurchaseLineTotal()">
+            <div class="grid grid-cols-3 gap-2">
+              <input id="purchasePackingCharge" type="number" step="0.01" placeholder="Packing Charge" class="border p-2 col-span-2" oninput="calculatePurchaseLineTotal()">
+              <select id="purchasePackingMode" class="border p-2" onchange="calculatePurchaseLineTotal()">
+                <option value="amount">Amt</option>
+                <option value="percent">%</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+            <input id="purchaseTransportCharge" type="number" step="0.01" placeholder="Transportation" class="border p-2" oninput="calculatePurchaseLineTotal()">
+            <div class="grid grid-cols-3 gap-2 md:col-span-2">
+              <input id="purchaseAgentCommission" type="number" step="0.01" placeholder="Agent Commission" class="border p-2 col-span-2" oninput="calculatePurchaseLineTotal()">
+              <select id="purchaseAgentCommissionMode" class="border p-2" onchange="calculatePurchaseLineTotal()">
+                <option value="amount">Amt</option>
+                <option value="percent">%</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-3 gap-2 md:col-span-2">
+              <input id="purchaseDiscount" type="number" step="0.01" placeholder="Discount" class="border p-2 col-span-2" oninput="calculatePurchaseLineTotal()">
+              <select id="purchaseDiscountMode" class="border p-2" onchange="calculatePurchaseLineTotal()">
+                <option value="amount">Amt</option>
+                <option value="percent">%</option>
+              </select>
+            </div>
+            <input id="purchaseSellingRate" type="number" step="0.01" placeholder="Selling Price" class="border p-2">
+            <input id="purchaseLineTotal" type="number" step="0.01" placeholder="Total" class="border p-2 bg-gray-100" readonly>
+            <button onclick="addPurchaseItem()" class="bg-indigo-600 text-white px-3 py-2 rounded">Add Item</button>
+          </div>
         </div>
 
-        <table class="w-full bg-white shadow rounded">
-          <thead class="bg-gray-200">
-            <tr>
-              <th class="p-2">Name</th>
-              <th class="p-2">City</th>
-              <th class="p-2">State</th>
-              <th class="p-2">Phone</th>
-              <th class="p-2">Address</th>
-              <th class="p-2">Feedback</th>
-              <th class="p-2">Action</th>
-            </tr>
-          </thead>
-          <tbody id="partyTable"></tbody>
-        </table>
-      </section>
+        <div class="bg-white shadow rounded mb-4 overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">S.No</th>
+                <th class="p-2">Particulars</th>
+                <th class="p-2 text-right">Case Count</th>
+                <th class="p-2 text-right">Per Qty/Case</th>
+                <th class="p-2">Pcs/Pkt</th>
+                <th class="p-2 text-right">Rate</th>
+                <th class="p-2 text-right">Packing Charge</th>
+                <th class="p-2 text-right">Transportation</th>
+                <th class="p-2 text-right">Agent Commission</th>
+                <th class="p-2 text-right">Discount</th>
+                <th class="p-2 text-right">Selling Price</th>
+                <th class="p-2 text-right">Total</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="purchaseItemsTableBody"></tbody>
+          </table>
+        </div>
 
-      <section id="salesView" class="hidden">
-        <h2 class="text-2xl font-semibold mb-4">Sales Invoice</h2>
+        <div class="bg-white p-4 rounded shadow mb-6 flex items-center justify-between">
+          <div class="text-lg font-semibold">Grand Total: <span id="purchaseGrandTotal">0.00</span></div>
+          <div>
+            <button id="purchaseSubmitBtn" onclick="submitPurchase()" class="bg-green-700 text-white px-4 py-2 rounded mr-2">Save Purchase</button>
+            <button onclick="cancelPurchaseEdit()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel Edit</button>
+          </div>
+        </div>
+
+        <h3 class="text-xl font-semibold mb-2">View All Entries</h3>
+        <div class="bg-white shadow rounded overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Bill No</th>
+                <th class="p-2">Date</th>
+                <th class="p-2">Supplier</th>
+                <th class="p-2">Particulars</th>
+                <th class="p-2 text-right">Case Count</th>
+                <th class="p-2 text-right">Per Qty/Case</th>
+                <th class="p-2">Pcs/Pkt</th>
+                <th class="p-2 text-right">Rate</th>
+                <th class="p-2 text-right">Packing Charge</th>
+                <th class="p-2 text-right">Transportation</th>
+                <th class="p-2 text-right">Agent Commission</th>
+                <th class="p-2 text-right">Discount</th>
+                <th class="p-2 text-right">Selling Price</th>
+                <th class="p-2 text-right">Total</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="purchasesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="salesTxnPanel" class="hidden">
+        <h3 class="text-2xl font-semibold mb-4">Estimated Sales Invoice</h3>
 
         <div class="bg-white p-4 rounded shadow mb-4">
           <input id="editingSaleId" type="hidden">
@@ -118,16 +253,53 @@
               <input id="saleDate" type="date" class="border p-2 w-full">
             </div>
             <div>
-              <label class="block mb-1">Party (Customer)</label>
-              <select id="salePartyId" class="border p-2 w-full"><option value="">Select Party</option></select>
+              <label class="block mb-1">Bill No</label>
+              <input id="saleBillNo" class="border p-2 w-full" placeholder="Auto Bill No (editable)">
             </div>
             <div>
-              <label class="block mb-1">Sale Type</label>
-              <select id="saleType" class="border p-2 w-full">
-                <option value="cash">Cash</option>
-                <option value="credit">Credit</option>
-              </select>
+              <label class="block mb-1">Time of Bill</label>
+              <input id="saleBillTime" type="time" class="border p-2 w-full">
             </div>
+          </div>
+
+          <div class="hidden">
+            <select id="salePartyId" onchange="onSalePartyChange()"><option value="">Select Party</option></select>
+            <select id="saleType">
+              <option value="cash">Cash</option>
+            </select>
+            <select id="saleGodownId"><option value="">Select Godown</option></select>
+            <input id="saleBillName" placeholder="Party Name">
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            <div>
+              <label class="block mb-1">Delivery Vehicle (Manual Entry)</label>
+              <input id="saleVehicleNo" class="border p-2 w-full" placeholder="TN 00 AB 1234">
+            </div>
+            <div>
+              <label class="block mb-1">Delivery Place</label>
+              <input id="saleDeliveryPlace" class="border p-2 w-full" placeholder="Delivery Place">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+            <div>
+              <label class="block mb-1">Delivery Date</label>
+              <input id="saleDeliveryDate" type="date" class="border p-2 w-full">
+            </div>
+            <div>
+              <label class="block mb-1">Delivery Time</label>
+              <input id="saleDeliveryTime" type="time" class="border p-2 w-full">
+            </div>
+            <div>
+              <label class="block mb-1">Delivery Feedback</label>
+              <input id="saleDeliveryFeedback" class="border p-2 w-full" placeholder="Delivery Feedback">
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="block mb-1">Address (Auto from selected party)</label>
+            <textarea id="salePartyAddress" rows="2" class="border p-2 w-full bg-gray-50" readonly></textarea>
           </div>
 
           <h3 class="text-lg font-semibold mt-4 mb-2">Add Item</h3>
@@ -166,18 +338,52 @@
           </table>
         </div>
 
-        <div class="bg-white p-4 rounded shadow mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div class="bg-white p-4 rounded shadow mb-6 grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
           <div>
             <label class="block mb-1">Grand Total</label>
             <input id="saleGrandTotal" class="border p-2 w-full bg-gray-100" readonly>
           </div>
           <div>
-            <label class="block mb-1">Discount</label>
-            <input id="saleDiscount" type="number" step="0.01" class="border p-2 w-full" oninput="recalculateSaleFinalTotal()" value="0">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-medium">Discount</span>
+              <label class="toggle-switch">
+                <input id="saleUseDiscount" type="checkbox" checked onchange="recalculateSaleFinalTotal()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <input id="saleDiscount" type="number" step="0.01" class="border p-2 w-full col-span-2" oninput="recalculateSaleFinalTotal()" value="0">
+              <select id="saleDiscountMode" class="border p-2" onchange="recalculateSaleFinalTotal()">
+                <option value="amount">Amt</option>
+                <option value="percent">%</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label class="block mb-1">Delivery Charges</label>
-            <input id="saleDeliveryCharges" type="number" step="0.01" class="border p-2 w-full" oninput="recalculateSaleFinalTotal()">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-medium">Transportation</span>
+              <label class="toggle-switch">
+                <input id="saleUseTransport" type="checkbox" checked onchange="recalculateSaleFinalTotal()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <input id="saleDeliveryCharges" type="number" step="0.01" class="border p-2 w-full" oninput="recalculateSaleFinalTotal()" value="0">
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-medium">Packing Charges</span>
+              <label class="toggle-switch">
+                <input id="saleUseCommission" type="checkbox" onchange="recalculateSaleFinalTotal()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <input id="saleCommissionCharges" type="number" step="0.01" class="border p-2 w-full col-span-2" oninput="recalculateSaleFinalTotal()" value="0" placeholder="Packing Charges">
+              <select id="salePackingMode" class="border p-2" onchange="recalculateSaleFinalTotal()">
+                <option value="amount">Amt</option>
+                <option value="percent">%</option>
+              </select>
+            </div>
           </div>
           <div>
             <label class="block mb-1">Final Total</label>
@@ -190,17 +396,16 @@
           </div>
         </div>
 
-        <h3 class="text-xl font-semibold mb-2">Recent Sales</h3>
-        <div class="bg-white shadow rounded overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-200">
+        <h3 class="text-xl font-semibold mb-2">Invoice Bill Index</h3>
+        <div class="bg-white border border-gray-200 shadow rounded overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-100 text-gray-700">
               <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Party</th>
-                <th class="p-2">Type</th>
-                <th class="p-2">Items</th>
-                <th class="p-2 text-right">Total</th>
-                <th class="p-2">Action</th>
+                <th class="px-3 py-2 text-left">Bill No</th>
+                <th class="px-3 py-2 text-left">Date</th>
+                <th class="px-3 py-2 text-left">Party</th>
+                <th class="px-3 py-2 text-right">Total</th>
+                <th class="px-3 py-2 text-left">Action</th>
               </tr>
             </thead>
             <tbody id="salesTableBody"></tbody>
@@ -209,18 +414,27 @@
 
         <div id="saleDetailCard" class="bg-white p-4 rounded shadow mt-6 hidden">
           <div class="flex items-center justify-between mb-3">
-            <h3 class="text-lg font-semibold">Invoice Detail</h3>
+            <h3 class="text-lg font-semibold">Estimated Bill Detail</h3>
             <div>
-              <button onclick="printSaleDetail()" class="bg-gray-700 text-white px-3 py-2 rounded mr-2">Print Selected Invoice</button>
+              <button onclick="shareSelectedSaleOnWhatsApp()" class="bg-emerald-600 text-white px-3 py-2 rounded mr-2">Share WhatsApp</button>
+              <button onclick="downloadSaleDetailPdf()" class="bg-indigo-700 text-white px-3 py-2 rounded mr-2">Download PDF</button>
+              <button onclick="printSaleDetail()" class="bg-gray-700 text-white px-3 py-2 rounded mr-2">Print Estimated Bill</button>
               <button onclick="closeSaleDetail()" class="bg-gray-500 text-white px-3 py-2 rounded">Close</button>
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4 text-sm">
-            <div><span class="font-semibold">Invoice #:</span> <span id="saleDetailId">-</span></div>
+            <div><span class="font-semibold">Bill No:</span> <span id="saleDetailId">-</span></div>
             <div><span class="font-semibold">Date:</span> <span id="saleDetailDate">-</span></div>
+            <div><span class="font-semibold">Time:</span> <span id="saleDetailTime">-</span></div>
             <div><span class="font-semibold">Party:</span> <span id="saleDetailParty">-</span></div>
             <div><span class="font-semibold">Type:</span> <span id="saleDetailType">-</span></div>
+            <div><span class="font-semibold">Delivery Date:</span> <span id="saleDetailDeliveryDate">-</span></div>
+            <div><span class="font-semibold">Delivery Time:</span> <span id="saleDetailDeliveryTime">-</span></div>
+            <div><span class="font-semibold">Delivery Vehicle:</span> <span id="saleDetailVehicle">-</span></div>
+            <div><span class="font-semibold">Delivery Place:</span> <span id="saleDetailDeliveryPlace">-</span></div>
+            <div class="md:col-span-2"><span class="font-semibold">Delivery Feedback:</span> <span id="saleDetailDeliveryFeedback">-</span></div>
+            <div class="md:col-span-2"><span class="font-semibold">Address:</span> <span id="saleDetailAddress">-</span></div>
           </div>
 
           <div class="overflow-x-auto">
@@ -240,16 +454,299 @@
           </div>
 
           <div class="mt-4 text-right text-lg font-semibold">
-            Invoice Total: <span id="saleDetailTotal">0.00</span>
+            Grand Total: <span id="saleDetailTotal">0.00</span>
           </div>
           <div id="saleDetailExtra" class="text-right text-sm text-gray-600 mt-1"></div>
         </div>
+      </div>
+
+      <div id="purchaseReturnTxnPanel" class="hidden">
+        <h3 class="text-2xl font-semibold mb-4">Purchase Return</h3>
+
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label class="block mb-1">Date</label>
+              <input id="purchaseReturnDate" type="date" class="border p-2 w-full">
+            </div>
+            <div>
+              <label class="block mb-1">Reference Purchase Bill</label>
+              <select id="purchaseReturnReferenceId" class="border p-2 w-full" onchange="onPurchaseReturnReferenceChange()">
+                <option value="">Select Purchase Bill</option>
+              </select>
+            </div>
+            <div>
+              <label class="block mb-1">Return Mode</label>
+              <select id="purchaseReturnMode" class="border p-2 w-full">
+                <option value="Credit">Credit</option>
+                <option value="Cash">Cash</option>
+              </select>
+            </div>
+            <div>
+              <label class="block mb-1">Return Bill No</label>
+              <input id="purchaseReturnBillNo" class="border p-2 w-full" placeholder="Auto Bill No">
+            </div>
+          </div>
+          <textarea id="purchaseReturnNotes" class="border p-2 w-full mt-3" rows="2" placeholder="Notes (optional)"></textarea>
+
+          <div class="mt-3 text-right">
+            <button onclick="submitPurchaseReturn()" class="bg-amber-600 text-white px-4 py-2 rounded">Save Purchase Return</button>
+          </div>
+        </div>
+
+        <div class="bg-white shadow rounded mb-4 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Product</th>
+                <th class="p-2 text-right">Cases</th>
+                <th class="p-2 text-right">Qty/Case</th>
+                <th class="p-2">Quantity Type</th>
+                <th class="p-2 text-right">Rate</th>
+                <th class="p-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="purchaseReturnItemsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="bg-white shadow rounded overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Bill No</th>
+                <th class="p-2">Date</th>
+                <th class="p-2">Party</th>
+                <th class="p-2 text-right">Total</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="purchaseReturnTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="salesReturnTxnPanel" class="hidden">
+        <h3 class="text-2xl font-semibold mb-4">Sales Return</h3>
+
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label class="block mb-1">Date</label>
+              <input id="salesReturnDate" type="date" class="border p-2 w-full">
+            </div>
+            <div>
+              <label class="block mb-1">Reference Sales Bill</label>
+              <select id="salesReturnReferenceId" class="border p-2 w-full" onchange="onSalesReturnReferenceChange()">
+                <option value="">Select Sales Bill</option>
+              </select>
+            </div>
+            <div>
+              <label class="block mb-1">Return Mode</label>
+              <select id="salesReturnMode" class="border p-2 w-full">
+                <option value="Credit">Credit</option>
+                <option value="Cash">Cash</option>
+              </select>
+            </div>
+            <div>
+              <label class="block mb-1">Return Bill No</label>
+              <input id="salesReturnBillNo" class="border p-2 w-full" placeholder="Auto Bill No">
+            </div>
+          </div>
+          <textarea id="salesReturnNotes" class="border p-2 w-full mt-3" rows="2" placeholder="Notes (optional)"></textarea>
+
+          <div class="mt-3 text-right">
+            <button onclick="submitSalesReturn()" class="bg-rose-600 text-white px-4 py-2 rounded">Save Sales Return</button>
+          </div>
+        </div>
+
+        <div class="bg-white shadow rounded mb-4 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Product</th>
+                <th class="p-2 text-right">Cases</th>
+                <th class="p-2 text-right">Qty/Case</th>
+                <th class="p-2">Quantity Type</th>
+                <th class="p-2 text-right">Rate</th>
+                <th class="p-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="salesReturnItemsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="bg-white shadow rounded overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Bill No</th>
+                <th class="p-2">Date</th>
+                <th class="p-2">Party</th>
+                <th class="p-2 text-right">Total</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="salesReturnTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="partyStatementPanel" class="hidden bg-white rounded shadow p-4 mt-6">
+        <h3 class="text-xl font-semibold mb-3">Party Statement (Invoice View)</h3>
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <input id="partyIndexSearch" oninput="renderPartyIndexList()" class="border p-2 w-full mb-3" placeholder="Search by name / city / phone">
+            <div class="overflow-x-auto max-h-[52vh]">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-200 sticky top-0">
+                  <tr>
+                    <th class="p-2 text-left">Name</th>
+                    <th class="p-2 text-left">Phone</th>
+                    <th class="p-2 text-left">City</th>
+                    <th class="p-2 text-left">View</th>
+                  </tr>
+                </thead>
+                <tbody id="partyIndexTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="partyStatementModal" class="hidden fixed inset-0 z-50 bg-black/40 p-4 overflow-y-auto">
+        <div class="max-w-6xl mx-auto bg-white rounded shadow-lg">
+          <div class="flex items-center justify-between px-4 py-3 border-b">
+            <h3 class="text-lg font-semibold">Party Statement Invoice</h3>
+            <div>
+              <button onclick="printPartyStatement()" class="bg-gray-700 text-white px-3 py-2 rounded mr-2">Print Statement</button>
+              <button onclick="closePartyStatementDialog()" class="bg-gray-500 text-white px-3 py-2 rounded">Close</button>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div id="partyStatementInvoice" class="border rounded p-4 bg-white">
+              <div class="flex items-start justify-between gap-4 border-b pb-3 mb-3">
+                <div>
+                  <h4 class="text-xl font-bold">Party Statement Invoice</h4>
+                  <div class="text-sm text-gray-600">Party: <span id="partyStatementName">-</span></div>
+                  <div class="text-sm text-gray-600">Phone / City: <span id="partyStatementMeta">-</span></div>
+                </div>
+                <div class="text-sm text-right">
+                  <div><span class="font-semibold">Date:</span> <span id="partyStatementDate">-</span></div>
+                  <div><span class="font-semibold">Time:</span> <span id="partyStatementTime">-</span></div>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-gray-100">
+                    <tr>
+                      <th class="p-2 text-left">S.No</th>
+                      <th class="p-2 text-left">Date</th>
+                      <th class="p-2 text-left">Particulars</th>
+                      <th class="p-2 text-right">Per Ctn/Pcs</th>
+                      <th class="p-2 text-right">Box Count</th>
+                      <th class="p-2 text-right">Rate</th>
+                      <th class="p-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="partyTxnTableBody"></tbody>
+                </table>
+              </div>
+
+              <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm no-print">
+                <label class="inline-flex items-center gap-2">
+                  <input id="partyIncludePacking" type="checkbox" onchange="recalculatePartyStatementSummary()">
+                  <span>Show Packing in bill</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                  <input id="partyIncludeTransport" type="checkbox" onchange="recalculatePartyStatementSummary()">
+                  <span>Show Transportation in bill</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                  <input id="partyIncludeCommission" type="checkbox" onchange="recalculatePartyStatementSummary()">
+                  <span>Show Commission in bill</span>
+                </label>
+              </div>
+
+              <div class="mt-4 ml-auto w-full md:w-[360px] border rounded">
+                <div class="flex justify-between px-3 py-2 border-b text-sm">
+                  <span>Total Payment</span>
+                  <span id="partySummaryPayment">0.00</span>
+                </div>
+                <div id="partySummaryPackingRow" class="flex justify-between px-3 py-2 border-b text-sm" style="display:none;">
+                  <span>Packing</span>
+                  <span id="partySummaryPacking">0.00</span>
+                </div>
+                <div id="partySummaryTransportRow" class="flex justify-between px-3 py-2 border-b text-sm" style="display:none;">
+                  <span>Transportation</span>
+                  <span id="partySummaryTransport">0.00</span>
+                </div>
+                <div id="partySummaryCommissionRow" class="flex justify-between px-3 py-2 border-b text-sm" style="display:none;">
+                  <span>Commission</span>
+                  <span id="partySummaryCommission">0.00</span>
+                </div>
+                <div class="flex justify-between px-3 py-2 text-base font-semibold bg-gray-50">
+                  <span>Final Total</span>
+                  <span id="partySummaryFinal">0.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       </section>
+      <section id="partyView" class="hidden">
+        <h2 class="text-2xl font-semibold mb-4">Party's Address</h2>
+
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <input id="editingPartyId" type="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input id="name" class="border p-2" placeholder="Party Name">
+            <select id="state" class="border p-2" onchange="onPartyStateChange()">
+              <option value="">Select State / UT</option>
+            </select>
+            <select id="city" class="border p-2">
+              <option value="">Select City</option>
+            </select>
+            <input id="phone" class="border p-2" placeholder="Phone">
+            <textarea id="address" class="border p-2 md:col-span-2" rows="3" placeholder="Address"></textarea>
+            <textarea id="feedback" class="border p-2 md:col-span-2" rows="3" placeholder="Feedback / Notes"></textarea>
+          </div>
+          <div class="mt-3">
+            <button id="submitBtn" onclick="addOrUpdateParty()" class="bg-blue-700 text-white px-4 py-2 rounded mr-2">Add</button>
+            <button onclick="clearPartyForm()" class="bg-gray-500 text-white px-4 py-2 rounded">Clear</button>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <input id="searchInput" oninput="searchParties()" class="border p-2 w-full" placeholder="Search parties">
+        </div>
+
+        <div class="bg-white shadow rounded overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Name</th>
+                <th class="p-2">City</th>
+                <th class="p-2">State</th>
+                <th class="p-2">Phone</th>
+                <th class="p-2">Address</th>
+                <th class="p-2">Feedback</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="partyTable"></tbody>
+          </table>
+        </div>
+      </section>
+
 
       <section id="profitLossView" class="hidden">
         <h2 class="text-2xl font-semibold mb-4">Profit &amp; Loss</h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div class="bg-white rounded shadow p-4">
             <p class="text-sm text-gray-500">Total Sales</p>
             <p id="plTotalSales" class="text-2xl font-bold text-green-700">0.00</p>
@@ -259,8 +756,8 @@
             <p id="plTotalPurchase" class="text-2xl font-bold text-red-700">0.00</p>
           </div>
           <div class="bg-white rounded shadow p-4">
-            <p class="text-sm text-gray-500">Net Profit / Loss</p>
-            <p id="plNetProfit" class="text-2xl font-bold">0.00</p>
+            <p class="text-sm text-gray-500">Net Profit</p>
+            <p id="plNetProfit" class="text-2xl font-bold text-indigo-700">0.00</p>
           </div>
           <div class="bg-white rounded shadow p-4">
             <p class="text-sm text-gray-500">Item-based Profit</p>
@@ -347,31 +844,31 @@
         <div class="bg-white p-4 rounded shadow mb-6">
           <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
             <input id="paymentInDate" type="date" class="border p-2" placeholder="Date">
-            <select id="paymentInPartyId" class="border p-2"><option value="">Select Party</option></select>
+            <select id="paymentInPartyId" class="border p-2"><option value="">Party Name</option></select>
             <input id="paymentInAmount" type="number" step="0.01" placeholder="Amount" class="border p-2">
             <select id="paymentInMode" class="border p-2">
               <option value="Cash">Cash</option>
               <option value="UPI">UPI</option>
-              <option value="Bank">Bank</option>
+              <option value="Bank Transaction">Bank Transaction</option>
+              <option value="Cheque">Cheque</option>
             </select>
-            <input id="paymentInDescription" placeholder="Description" class="border p-2">
+            <div class="border p-2 bg-gray-50 text-sm text-gray-600 rounded">Entry: Payment Received</div>
           </div>
           <button onclick="addPaymentIn()" class="mt-3 bg-green-600 text-white px-4 py-2 rounded">Save Payment IN</button>
         </div>
 
-        <div class="bg-white shadow rounded mb-8 overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-200">
+        <div class="bg-white shadow-lg rounded-xl border border-slate-200 mb-8 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gradient-to-r from-slate-800 to-slate-700 text-white">
               <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Party</th>
-                <th class="p-2 text-right">Amount</th>
-                <th class="p-2">Mode</th>
-                <th class="p-2">Description</th>
-                <th class="p-2">Action</th>
+                <th class="p-3 text-left">Date</th>
+                <th class="p-3 text-left">Party Name</th>
+                <th class="p-3 text-right">Amount</th>
+                <th class="p-3 text-left">Mode</th>
+                <th class="p-3 text-left">Action</th>
               </tr>
             </thead>
-            <tbody id="paymentsInTableBody"></tbody>
+            <tbody id="paymentsInTableBody" class="divide-y divide-slate-200"></tbody>
           </table>
         </div>
       </section>
@@ -382,31 +879,31 @@
         <div class="bg-white p-4 rounded shadow mb-6">
           <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
             <input id="paymentOutDate" type="date" class="border p-2" placeholder="Date">
-            <select id="paymentOutPartyId" class="border p-2"><option value="">Select Party</option></select>
+            <select id="paymentOutPartyId" class="border p-2"><option value="">Party Name</option></select>
             <input id="paymentOutAmount" type="number" step="0.01" placeholder="Amount" class="border p-2">
             <select id="paymentOutMode" class="border p-2">
               <option value="Cash">Cash</option>
               <option value="UPI">UPI</option>
-              <option value="Bank">Bank</option>
+              <option value="Bank Transaction">Bank Transaction</option>
+              <option value="Cheque">Cheque</option>
             </select>
-            <input id="paymentOutDescription" placeholder="Description" class="border p-2">
+            <div class="border p-2 bg-gray-50 text-sm text-gray-600 rounded">Entry: Payment Out</div>
           </div>
           <button onclick="addPaymentOut()" class="mt-3 bg-red-600 text-white px-4 py-2 rounded">Save Payment OUT</button>
         </div>
 
-        <div class="bg-white shadow rounded mb-8 overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-200">
+        <div class="bg-white shadow-lg rounded-xl border border-slate-200 mb-8 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gradient-to-r from-slate-800 to-slate-700 text-white">
               <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Party</th>
-                <th class="p-2 text-right">Amount</th>
-                <th class="p-2">Mode</th>
-                <th class="p-2">Description</th>
-                <th class="p-2">Action</th>
+                <th class="p-3 text-left">Date</th>
+                <th class="p-3 text-left">Party Name</th>
+                <th class="p-3 text-right">Amount</th>
+                <th class="p-3 text-left">Mode</th>
+                <th class="p-3 text-left">Action</th>
               </tr>
             </thead>
-            <tbody id="paymentsOutTableBody"></tbody>
+            <tbody id="paymentsOutTableBody" class="divide-y divide-slate-200"></tbody>
           </table>
         </div>
       </section>
@@ -416,13 +913,14 @@
         <input id="editPaymentId" type="hidden">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input id="editPaymentDate" type="date" class="border p-2">
-          <select id="editPaymentPartyId" class="border p-2"><option value="">Select Party</option></select>
+          <select id="editPaymentPartyId" class="border p-2"><option value="">Select Particulars / Debit</option></select>
           <select id="editPaymentType" class="border p-2"><option value="IN">IN</option><option value="OUT">OUT</option></select>
           <input id="editPaymentAmount" type="number" step="0.01" placeholder="Amount" class="border p-2">
           <select id="editPaymentMode" class="border p-2">
             <option value="Cash">Cash</option>
             <option value="UPI">UPI</option>
-            <option value="Bank">Bank</option>
+            <option value="Bank Transaction">Bank Transaction</option>
+            <option value="Cheque">Cheque</option>
           </select>
           <input id="editPaymentDescription" placeholder="Description" class="border p-2">
         </div>
@@ -433,147 +931,110 @@
       </div>
 
       <section id="ledgerView" class="hidden">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-semibold">Ledger</h2>
-          <button onclick="exportLedgerCsv()" class="bg-blue-700 text-white px-4 py-2 rounded">Export CSV</button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded shadow mb-4">
-          <div>
-            <label class="block mb-2 font-medium">Party</label>
-            <select id="ledgerPartyId" onchange="loadLedger()" class="border p-2 w-full"><option value="">All Parties</option></select>
-          </div>
-          <div>
-            <label class="block mb-2 font-medium">From Date</label>
-            <input id="ledgerDateFrom" type="date" onchange="loadLedger()" class="border p-2 w-full">
-          </div>
-          <div>
-            <label class="block mb-2 font-medium">To Date</label>
-            <input id="ledgerDateTo" type="date" onchange="loadLedger()" class="border p-2 w-full">
-          </div>
-        </div>
-
-        <div class="bg-white shadow rounded overflow-x-auto border border-gray-200">
-          <table class="w-full table-fixed">
-            <thead>
-              <tr>
-                <th class="p-2 text-left bg-red-100" colspan="3">Debit (Dr)</th>
-                <th class="p-2 text-left bg-green-100 border-l-8 border-gray-500" colspan="3">Credit (Cr)</th>
-                <th class="p-2 text-right bg-gray-100">Balance</th>
-              </tr>
-              <tr class="bg-gray-200">
-                <th class="p-2">Date</th>
-                <th class="p-2">Particulars</th>
-                <th class="p-2 text-right">Amount</th>
-                <th class="p-2 border-l-8 border-gray-500">Date</th>
-                <th class="p-2">Particulars</th>
-                <th class="p-2 text-right">Amount</th>
-                <th class="p-2 text-right">Running</th>
-              </tr>
-            </thead>
-            <tbody id="ledgerTableBody"></tbody>
-            <tfoot class="bg-gray-100 font-semibold">
-              <tr>
-                <td class="p-2" colspan="2">Total Debit</td>
-                <td id="ledgerTotalDebit" class="p-2 text-right">0.00</td>
-                <td class="p-2 border-l-8 border-gray-500" colspan="2">Total Credit</td>
-                <td id="ledgerTotalCredit" class="p-2 text-right">0.00</td>
-                <td id="ledgerClosingBalance" class="p-2 text-right">0.00</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </section>
-
-      <section id="purchaseView" class="hidden">
-        <h2 class="text-2xl font-semibold mb-4">Purchase Entry</h2>
-
         <div class="bg-white p-4 rounded shadow mb-4">
-          <input id="editingPurchaseId" type="hidden">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label class="block mb-1">Date</label>
-              <input id="purchaseDate" type="date" class="border p-2 w-full">
-            </div>
-            <div>
-              <label class="block mb-1">Party (Supplier)</label>
-              <select id="purchasePartyId" class="border p-2 w-full"><option value="">Select Party</option></select>
-            </div>
-            <div>
-              <label class="block mb-1">Godown</label>
-              <select id="purchaseGodownId" class="border p-2 w-full"><option value="">Select Godown</option></select>
-            </div>
+          <h2 class="text-2xl font-semibold">Ledger</h2>
+        </div>
+
+        <div id="ledgerPartyPicker" class="bg-white p-4 rounded shadow mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold">Party Index</h3>
+            <button onclick="refreshLedgerPartyIndex()" class="bg-blue-700 text-white px-3 py-2 rounded">Refresh</button>
           </div>
 
-          <h3 class="text-lg font-semibold mt-4 mb-2">Add Item</h3>
-          <div class="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-11 gap-3">
-            <input id="purchaseProductName" placeholder="Product Name" class="border p-2">
-            <input id="purchaseBoxes" type="number" placeholder="Cases" class="border p-2" oninput="calculatePurchaseLineTotal()">
-            <input id="purchasePieces" type="number" placeholder="Qty per Case" class="border p-2" oninput="calculatePurchaseLineTotal()">
-            <select id="purchaseUnitType" class="border p-2">
-              <option value="Pcs">Pcs</option>
-              <option value="Box">Box</option>
-              <option value="Unit">Unit</option>
-              <option value="Pkt">Pkt</option>
-            </select>
-            <input id="purchaseRate" type="number" step="0.01" placeholder="Rate per Unit" class="border p-2" oninput="calculatePurchaseLineTotal()">
-            <input id="purchasePackingCharge" type="number" step="0.01" placeholder="Packing Charge" class="border p-2" oninput="calculatePurchaseLineTotal()">
-            <input id="purchaseTransportCharge" type="number" step="0.01" placeholder="Transport Charge" class="border p-2" oninput="calculatePurchaseLineTotal()">
-            <input id="purchaseAgentName" placeholder="Agent Name" class="border p-2">
-            <input id="purchaseSellingRate" type="number" step="0.01" placeholder="Selling Rate" class="border p-2">
-            <input id="purchaseLineTotal" type="number" step="0.01" placeholder="Total" class="border p-2 bg-gray-100" readonly>
-            <button onclick="addPurchaseItem()" class="bg-indigo-600 text-white px-3 py-2 rounded">Add Item</button>
+          <input id="ledgerPartySearch" oninput="renderLedgerPartyTable()" class="border p-2 w-full mb-3" placeholder="Search by party / phone / city">
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="p-2 text-left">S.No</th>
+                  <th class="p-2 text-left">Party Name</th>
+                  <th class="p-2 text-left">Phone</th>
+                  <th class="p-2 text-left">City</th>
+                  <th class="p-2 text-left">Action</th>
+                </tr>
+              </thead>
+              <tbody id="ledgerPartyTableBody"></tbody>
+            </table>
           </div>
         </div>
 
-        <div class="bg-white shadow rounded mb-4 overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="p-2">Product</th>
-                <th class="p-2">Cases</th>
-                <th class="p-2">Qty/Case</th>
-                <th class="p-2">Quantity Type</th>
-                <th class="p-2 text-right">Rate</th>
-                <th class="p-2 text-right">Packing</th>
-                <th class="p-2 text-right">Transport</th>
-                <th class="p-2">Agent</th>
-                <th class="p-2 text-right">Selling</th>
-                <th class="p-2 text-right">Total</th>
-                <th class="p-2">Action</th>
-              </tr>
-            </thead>
-            <tbody id="purchaseItemsTableBody"></tbody>
-          </table>
-        </div>
-
-        <div class="bg-white p-4 rounded shadow mb-6 flex items-center justify-between">
-          <div class="text-lg font-semibold">Grand Total: <span id="purchaseGrandTotal">0.00</span></div>
-          <div>
-            <button id="purchaseSubmitBtn" onclick="submitPurchase()" class="bg-green-700 text-white px-4 py-2 rounded mr-2">Save Purchase</button>
-            <button onclick="cancelPurchaseEdit()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel Edit</button>
+        <div id="ledgerDetailPanel" class="hidden">
+          <div class="bg-white p-4 rounded shadow mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h3 id="ledgerPartyTitle" class="text-xl font-semibold">Party Ledger</h3>
+              <p id="ledgerPartyMeta" class="text-sm text-gray-600">-</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="shareLedgerOnWhatsApp()" class="bg-emerald-600 text-white px-3 py-2 rounded">Share WhatsApp</button>
+              <button onclick="downloadLedgerPdf()" class="bg-indigo-700 text-white px-3 py-2 rounded">Download PDF</button>
+              <button onclick="backToLedgerPartyPicker()" class="bg-gray-500 text-white px-3 py-2 rounded">Back</button>
+            </div>
           </div>
-        </div>
 
-        <h3 class="text-xl font-semibold mb-2">Recent Purchases</h3>
-        <div class="bg-white shadow rounded overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Party</th>
-                <th class="p-2">Product</th>
-                <th class="p-2 text-right">Cases</th>
-                <th class="p-2 text-right">Qty/Case</th>
-                <th class="p-2">Quantity Type</th>
-                <th class="p-2 text-right">Rate</th>
-                <th class="p-2 text-right">Transportation</th>
-                <th class="p-2 text-right">Packing</th>
-                <th class="p-2">Action</th>
-              </tr>
-            </thead>
-            <tbody id="purchasesTableBody"></tbody>
-          </table>
+          <div class="bg-white p-4 rounded shadow mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+              <div>
+                <label class="block mb-1 text-sm font-medium">From Date</label>
+                <input id="ledgerDateFrom" type="date" onchange="loadLedger()" class="border p-2 w-full">
+              </div>
+              <div>
+                <label class="block mb-1 text-sm font-medium">To Date</label>
+                <input id="ledgerDateTo" type="date" onchange="loadLedger()" class="border p-2 w-full">
+              </div>
+              <div>
+                <label class="block mb-1 text-sm font-medium">Manual Entry Date</label>
+                <input id="ledgerManualDate" type="date" class="border p-2 w-full">
+              </div>
+              <div>
+                <label class="block mb-1 text-sm font-medium">Particulars</label>
+                <input id="ledgerManualParticulars" class="border p-2 w-full" placeholder="Manual particulars">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+              <div>
+                <label class="block mb-1 text-sm font-medium">Debit</label>
+                <input id="ledgerManualDebit" type="number" step="0.01" min="0" class="border p-2 w-full" placeholder="0.00" oninput="onLedgerManualInputChange()">
+              </div>
+              <div>
+                <label class="block mb-1 text-sm font-medium">Credit</label>
+                <input id="ledgerManualCredit" type="number" step="0.01" min="0" class="border p-2 w-full" placeholder="0.00" oninput="onLedgerManualInputChange()">
+              </div>
+              <div class="md:col-span-2 text-right">
+                <button id="ledgerManualSaveBtn" onclick="saveManualLedgerEntry()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded">Add Manual Entry</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white shadow rounded overflow-x-auto border border-gray-200">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="p-2 text-left">Date</th>
+                  <th class="p-2 text-left">Particulars</th>
+                  <th class="p-2 text-right">Debit</th>
+                  <th class="p-2 text-right">Credit</th>
+                  <th class="p-2 text-left">Action</th>
+                </tr>
+              </thead>
+              <tbody id="ledgerTableBody"></tbody>
+              <tfoot class="bg-gray-100 font-semibold">
+                <tr>
+                  <td class="p-2" colspan="2">Totals</td>
+                  <td id="ledgerTotalDebit" class="p-2 text-right">0.00</td>
+                  <td id="ledgerTotalCredit" class="p-2 text-right">0.00</td>
+                  <td class="p-2"></td>
+                </tr>
+                <tr class="bg-gray-50">
+                  <td id="ledgerBalanceLabel" class="p-2" colspan="2">Balance</td>
+                  <td id="ledgerClosingDebit" class="p-2 text-right text-gray-700">0.00</td>
+                  <td id="ledgerClosingCredit" class="p-2 text-right text-gray-700">0.00</td>
+                  <td class="p-2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -615,8 +1076,9 @@
             <table class="w-full text-sm">
               <thead class="bg-blue-700 text-white">
                 <tr>
+                  <th class="p-2">Date</th>
+                  <th class="p-2">Bill No</th>
                   <th class="p-2">Product Name</th>
-                  <th class="p-2">Added Date</th>
                   <th class="p-2 text-right">Cases</th>
                   <th class="p-2 text-right">Qty/Case</th>
                   <th class="p-2">Quantity Type</th>
@@ -633,6 +1095,138 @@
               <tbody id="stockTableBody" class="divide-y divide-gray-200"></tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <section id="rawMaterialStockView" class="hidden">
+        <h2 class="text-2xl font-semibold mb-4">Raw Material Stock Maintain</h2>
+
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <input id="rawMaterialStockSearch" placeholder="Search product" class="border p-2 w-full" oninput="refreshRawMaterialStock()">
+        </div>
+
+        <div class="bg-white shadow rounded overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-blue-700 text-white">
+              <tr>
+                <th class="p-2">Product Name</th>
+                <th class="p-2">Quantity Type</th>
+                <th class="p-2 text-right">Product IN</th>
+                <th class="p-2 text-right">Product OUT</th>
+                <th class="p-2 text-right">Balance Qty</th>
+                <th class="p-2">Last Updated</th>
+              </tr>
+            </thead>
+            <tbody id="rawMaterialStockTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="rawMaterialEntryView" class="hidden">
+        <h2 class="text-2xl font-semibold mb-4">Product IN / OUT</h2>
+
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <input id="rawMaterialEditingId" type="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label class="block mb-1">Date</label>
+              <input id="rawMaterialDate" type="date" class="border p-2 w-full">
+            </div>
+            <div>
+              <label class="block mb-1">Product IN / OUT</label>
+              <select id="rawMaterialEntryType" class="border p-2 w-full" onchange="onRawMaterialEntryTypeChange()">
+                <option value="IN">Product IN</option>
+                <option value="OUT">Product OUT</option>
+              </select>
+            </div>
+            <div>
+              <label class="block mb-1">Party Name</label>
+              <select id="rawMaterialPartyId" class="border p-2 w-full">
+                <option value="">Select Party</option>
+              </select>
+            </div>
+            <div>
+              <label class="block mb-1">Product Details</label>
+              <input id="rawMaterialProductName" list="rawMaterialProductList" class="border p-2 w-full" placeholder="Select or type product details">
+              <datalist id="rawMaterialProductList"></datalist>
+            </div>
+            <div>
+              <label class="block mb-1">Quantity</label>
+              <input id="rawMaterialQuantity" type="number" step="0.01" min="0" class="border p-2 w-full" placeholder="0.00">
+            </div>
+            <div>
+              <label class="block mb-1">Quantity Type</label>
+              <select id="rawMaterialUnitType" class="border p-2 w-full">
+                <option value="Pcs">Pcs</option>
+                <option value="Box">Box</option>
+                <option value="Unit">Unit</option>
+                <option value="Pkt">Pkt</option>
+                <option value="Kg">Kg</option>
+                <option value="Gram">Gram</option>
+                <option value="Bag">Bag</option>
+                <option value="Sheet">Sheet</option>
+                <option value="Ream">Ream</option>
+                <option value="Gross">Gross</option>
+              </select>
+            </div>
+            <div id="rawMaterialRateWrap">
+              <label class="block mb-1">Rate Per (Type)</label>
+              <input id="rawMaterialRate" type="number" step="0.01" min="0" class="border p-2 w-full" placeholder="0.00">
+            </div>
+            <div id="rawMaterialPlaceWrap">
+              <label class="block mb-1">Product Place</label>
+              <input id="rawMaterialPurchasePlace" class="border p-2 w-full" placeholder="Product place">
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <button id="rawMaterialSaveBtn" onclick="saveRawMaterialTransaction()" class="bg-green-700 text-white px-4 py-2 rounded mr-2">Save Entry</button>
+            <button onclick="cancelRawMaterialEdit()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel Edit</button>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <input id="rawMaterialTxnSearch" class="border p-2 w-full" placeholder="Search by product details / party / place" oninput="refreshRawMaterialTransactions()">
+        </div>
+
+        <div class="bg-white shadow rounded overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Date</th>
+                <th class="p-2">Product Details</th>
+                <th class="p-2 text-right">Quantity</th>
+                <th class="p-2">Quantity Type</th>
+                <th class="p-2 text-right">Rate Per (Type)</th>
+                <th class="p-2">Product Place</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="rawMaterialTxnTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="rawMaterialLedgerView" class="hidden">
+        <h2 class="text-2xl font-semibold mb-4">Raw Material Ledger</h2>
+
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <input id="rawMaterialLedgerSearch" class="border p-2 w-full" placeholder="Search by product / party" oninput="refreshRawMaterialLedger()">
+        </div>
+
+        <div class="bg-white shadow rounded overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Date</th>
+                <th class="p-2">Product</th>
+                <th class="p-2 text-right">Received</th>
+                <th class="p-2 text-right">Used</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="rawMaterialLedgerBody"></tbody>
+          </table>
         </div>
       </section>
 
@@ -670,7 +1264,9 @@
             <input id="profPhone" placeholder="Phone" class="border p-2">
             <input id="profGst" placeholder="GST Number" class="border p-2">
             <input id="profEmail" placeholder="Email" class="border p-2">
-            <input id="profLogo" placeholder="Logo URL (optional)" class="border p-2 md:col-span-2">
+            <input id="profLogo" placeholder="Logo URL / Data URI" class="border p-2 md:col-span-2">
+            <input id="profLogoFile" type="file" accept="image/*" class="border p-2 md:col-span-2" onchange="onProfileLogoFileChange()">
+            <img id="profileLogoPreview" alt="Logo Preview" class="hidden h-20 w-20 object-contain border rounded p-1 bg-white md:col-span-2">
             <textarea id="profAddress" placeholder="Address" class="border p-2 md:col-span-2" rows="3"></textarea>
           </div>
           <button onclick="saveProfileSettings()" class="mt-4 bg-green-700 text-white px-4 py-2 rounded">Save Profile</button>
@@ -682,6 +1278,58 @@
             <button onclick="exportLedgerCsv()" class="bg-indigo-700 text-white px-4 py-2 rounded">Export Ledger CSV</button>
             <button onclick="importPartiesCsv()" class="bg-amber-700 text-white px-4 py-2 rounded">Import Parties CSV</button>
           </div>
+        </div>
+      </section>
+
+      <section id="labourAttendanceView" class="hidden">
+        <h2 class="text-2xl font-semibold mb-4">Labour Attendance</h2>
+
+        <div class="bg-white p-4 rounded shadow mb-4">
+          <input id="labourEditingId" type="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <input id="labourDate" type="date" class="border p-2" placeholder="Date">
+            <input id="labourName" class="border p-2" placeholder="Name">
+            <input id="labourPerHourCost" type="number" step="0.01" min="0" class="border p-2" placeholder="Per Hour Cost" oninput="recalculateLabourSalary()">
+            <input id="labourTotalHours" type="number" step="0.01" min="0" class="border p-2" placeholder="Total Hours" oninput="recalculateLabourSalary()">
+            <input id="labourTotalSalary" type="number" step="0.01" min="0" class="border p-2 bg-gray-100" placeholder="Total Salary" readonly>
+          </div>
+          <textarea id="labourNotes" class="border p-2 w-full mt-3" rows="2" placeholder="Notes (optional)"></textarea>
+          <div class="mt-3">
+            <button id="labourSaveBtn" onclick="saveLabourEntry()" class="bg-blue-700 text-white px-4 py-2 rounded mr-2">Add Entry</button>
+            <button onclick="cancelLabourEdit()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+          </div>
+        </div>
+
+        <h3 class="text-xl font-semibold mb-2">Attendance Rows</h3>
+        <div class="bg-white shadow rounded overflow-x-auto mb-6">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Date</th>
+                <th class="p-2">Name</th>
+                <th class="p-2 text-right">Per Hour Cost</th>
+                <th class="p-2 text-right">Total Hours</th>
+                <th class="p-2 text-right">Total Salary</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="labourTableBody"></tbody>
+          </table>
+        </div>
+
+        <h3 class="text-xl font-semibold mb-2">Week End (Saturday) Summary</h3>
+        <div class="bg-white shadow rounded overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2">Week End (Saturday)</th>
+                <th class="p-2 text-right">Rows</th>
+                <th class="p-2 text-right">Total Hours</th>
+                <th class="p-2 text-right">Total Salary</th>
+              </tr>
+            </thead>
+            <tbody id="labourWeeklyBody"></tbody>
+          </table>
         </div>
       </section>
     </main>

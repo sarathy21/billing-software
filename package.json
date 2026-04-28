@@ -20,6 +20,13 @@
   },
   "build": {
     "appId": "com.sarat.billingsoftware",
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.business"
+    },
     "win": {
       "target": [
         "nsis"
@@ -37,7 +44,9 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",
-    "electron-updater": "^6.8.3"
+    "country-state-city": "^3.2.1",
+    "electron-updater": "^6.8.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",

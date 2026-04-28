@@ -1,5 +1,53 @@
 const db = require('../database/db');
 
+let StateLibrary = null;
+let CityLibrary = null;
+try {
+  ({ State: StateLibrary, City: CityLibrary } = require('country-state-city'));
+} catch (_error) {
+  StateLibrary = null;
+  CityLibrary = null;
+}
+
+const fallbackStateNames = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+  'Andaman and Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry'
+];
+
 const countPaymentRefsStmt = db.prepare(`SELECT COUNT(*) AS count FROM payments WHERE party_id = ?`);
 const countPurchaseRefsStmt = db.prepare(`SELECT COUNT(*) AS count FROM purchases WHERE party_id = ?`);
 const countSaleRefsStmt = db.prepare(`SELECT COUNT(*) AS count FROM sales WHERE party_id = ?`);
@@ -122,10 +170,61 @@ function searchParties(query) {
   return stmt.all(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
 }
 
+function getIndianStates() {
+  if (StateLibrary && typeof StateLibrary.getStatesOfCountry === 'function') {
+    const states = StateLibrary.getStatesOfCountry('IN') || [];
+    return states
+      .map((stateItem) => ({
+        name: String(stateItem?.name || '').trim(),
+        isoCode: String(stateItem?.isoCode || '').trim()
+      }))
+      .filter((stateItem) => stateItem.name)
+      .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+  }
+
+  return fallbackStateNames
+    .map((name) => ({ name, isoCode: '' }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+}
+
+function getIndianCities(stateNameOrCode) {
+  const stateNeedle = String(stateNameOrCode || '').trim();
+  if (!stateNeedle) {
+    return [];
+  }
+
+  if (!(StateLibrary && CityLibrary)) {
+    return [];
+  }
+
+  const states = StateLibrary.getStatesOfCountry('IN') || [];
+  const selectedState = states.find((stateItem) => (
+    String(stateItem?.isoCode || '').toLowerCase() === stateNeedle.toLowerCase()
+      || String(stateItem?.name || '').toLowerCase() === stateNeedle.toLowerCase()
+  ));
+
+  if (!selectedState || !selectedState.isoCode) {
+    return [];
+  }
+
+  const uniqueCityNames = new Set();
+  (CityLibrary.getCitiesOfState('IN', selectedState.isoCode) || []).forEach((cityItem) => {
+    const name = String(cityItem?.name || '').trim();
+    if (name) {
+      uniqueCityNames.add(name);
+    }
+  });
+
+  return Array.from(uniqueCityNames)
+    .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+}
+
 module.exports = {
   addParty,
   getParties,
   updateParty,
   deleteParty,
-  searchParties
+  searchParties,
+  getIndianStates,
+  getIndianCities
 };

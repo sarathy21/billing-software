@@ -1,29 +1,31 @@
 const db = require('../database/db');
 
 const insertPurchaseStmt = db.prepare(
-  `INSERT INTO purchases (date, party_id, godown_id, delivery_type, total)
-   VALUES (?, ?, ?, ?, ?)`
+  `INSERT INTO purchases (bill_no, date, party_id, godown_id, delivery_type, total)
+   VALUES (?, ?, ?, ?, ?, ?)`
 );
 
 const updatePurchaseStmt = db.prepare(
   `UPDATE purchases
-   SET date = ?, party_id = ?, godown_id = ?, delivery_type = ?, total = ?
+   SET bill_no = ?, date = ?, party_id = ?, godown_id = ?, delivery_type = ?, total = ?
    WHERE id = ?`
 );
+
+const updatePurchaseBillNoStmt = db.prepare(`UPDATE purchases SET bill_no = ? WHERE id = ?`);
 
 const deletePurchaseStmt = db.prepare(`DELETE FROM purchases WHERE id = ?`);
 
 const insertPurchaseItemStmt = db.prepare(
   `INSERT INTO purchase_items (
-      purchase_id, product_id, boxes, pieces, unit_type, rate, packing_charge,
-      transport_charge, agent_name, selling_rate, notes, total
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      purchase_id, product_id, boxes, pieces, unit_type, rate, discount_percent, packing_charge,
+      transport_charge, agent_name, agent_commission, selling_rate, notes, total
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 );
 
 const updatePurchaseItemRateStmt = db.prepare(
   `UPDATE purchase_items
-   SET rate = ?, packing_charge = ?, transport_charge = ?, agent_name = ?,
-       selling_rate = ?, unit_type = ?, notes = ?, total = ?
+   SET rate = ?, discount_percent = ?, packing_charge = ?, transport_charge = ?, agent_name = ?,
+       agent_commission = ?, selling_rate = ?, unit_type = ?, notes = ?, total = ?
    WHERE id = ?`
 );
 
@@ -33,9 +35,11 @@ const deletePurchaseItemsStmt = db.prepare(`DELETE FROM purchase_items WHERE pur
 const getPurchaseItemsStmt = db.prepare(
   `SELECT pi.id, pi.purchase_id, pi.product_id, p.name AS product_name,
       pi.boxes, pi.pieces, COALESCE(pi.unit_type, 'Pcs') AS unit_type,
-      pi.rate, COALESCE(pi.packing_charge, 0) AS packing_charge,
+    pi.rate, COALESCE(pi.discount_percent, 0) AS discount_percent,
+      COALESCE(pi.packing_charge, 0) AS packing_charge,
           COALESCE(pi.transport_charge, 0) AS transport_charge,
           COALESCE(pi.agent_name, '') AS agent_name,
+          COALESCE(pi.agent_commission, 0) AS agent_commission,
           COALESCE(pi.selling_rate, pi.rate) AS selling_rate,
           COALESCE(pi.notes, '') AS notes, pi.total
    FROM purchase_items pi
@@ -47,12 +51,14 @@ const getPurchaseItemsStmt = db.prepare(
 const getPurchaseItemByIdStmt = db.prepare(
   `SELECT pi.id, pi.purchase_id, pi.product_id, pi.boxes, pi.pieces, pi.rate,
           COALESCE(pi.unit_type, 'Pcs') AS unit_type,
+          COALESCE(pi.discount_percent, 0) AS discount_percent,
           COALESCE(pi.packing_charge, 0) AS packing_charge,
           COALESCE(pi.transport_charge, 0) AS transport_charge,
           COALESCE(pi.agent_name, '') AS agent_name,
+          COALESCE(pi.agent_commission, 0) AS agent_commission,
           COALESCE(pi.selling_rate, pi.rate) AS selling_rate,
           COALESCE(pi.notes, '') AS notes, pi.total,
-          pu.date, pu.party_id, pu.godown_id, pu.delivery_type, pa.name AS party_name,
+          pu.bill_no, pu.date, pu.party_id, pu.godown_id, pu.delivery_type, pa.name AS party_name,
           p.name AS product_name
    FROM purchase_items pi
    JOIN purchases pu ON pu.id = pi.purchase_id
@@ -113,7 +119,7 @@ const getGodownStockItemDetailStmt = db.prepare(
           total_boxes, total_pieces, pieces_per_box,
           COALESCE(unit_type, 'Pcs') AS unit_type,
           purchase_rate, packing_charge, transport_charge,
-          selling_rate, last_purchase_date
+          selling_rate, last_purchase_date, COALESCE(last_purchase_bill_no, '') AS last_purchase_bill_no
    FROM godown_stock
    WHERE godown_id = ? AND product_id = ?`
 );
@@ -121,8 +127,8 @@ const getGodownStockItemDetailStmt = db.prepare(
 const insertGodownStockStmt = db.prepare(
   `INSERT INTO godown_stock (
       godown_id, product_id, purchase_rate, packing_charge, transport_charge,
-      agent_name, selling_rate, pieces_per_box, unit_type, total_boxes, total_pieces, last_purchase_date
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      agent_name, selling_rate, pieces_per_box, unit_type, total_boxes, total_pieces, last_purchase_date, last_purchase_bill_no
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 );
 
 const updateGodownStockTotalsStmt = db.prepare(
@@ -134,7 +140,7 @@ const updateGodownStockTotalsStmt = db.prepare(
 const updateGodownStockMetaStmt = db.prepare(
   `UPDATE godown_stock
    SET purchase_rate = ?, packing_charge = ?, transport_charge = ?,
-       agent_name = ?, selling_rate = ?, pieces_per_box = ?, unit_type = ?, last_purchase_date = ?
+       agent_name = ?, selling_rate = ?, pieces_per_box = ?, unit_type = ?, last_purchase_date = ?, last_purchase_bill_no = ?
    WHERE godown_id = ? AND product_id = ?`
 );
 
@@ -148,7 +154,8 @@ const latestMetaForGodownProductStmt = db.prepare(
           COALESCE(pi.selling_rate, pi.rate) AS selling_rate,
           COALESCE(pi.unit_type, 'Pcs') AS unit_type,
           pi.pieces,
-          pu.date
+          pu.date,
+          COALESCE(pu.bill_no, CAST(pu.id AS TEXT)) AS bill_no
    FROM purchase_items pi
    JOIN purchases pu ON pu.id = pi.purchase_id
    WHERE pu.godown_id = ? AND pi.product_id = ?
@@ -205,13 +212,19 @@ function normalizeItems(items) {
     const piecesPerBox = Number(item.pieces);
     const unitType = normalizeUnitType(item.unit_type);
     const rate = Number(item.rate);
+    const discountPercent = Number(item.discount_percent);
     const packingCharge = Number(item.packing_charge);
     const transportCharge = Number(item.transport_charge);
-    const agentName = String(item.agent_name || '').trim();
+    const agentName = String(item.agent_name || '').trim() || 'Supplier';
+    const agentCommission = Number(item.agent_commission);
     const sellingRate = Number(item.selling_rate);
     const notes = String(item.notes || '').trim();
     const lineBase = (Number.isFinite(boxes) ? boxes : 0) * (Number.isFinite(piecesPerBox) ? piecesPerBox : 0) * (Number.isFinite(rate) ? rate : 0);
-    const computedTotal = lineBase + (Number.isFinite(packingCharge) ? packingCharge : 0) + (Number.isFinite(transportCharge) ? transportCharge : 0);
+    const discountAmount = Number.isFinite(discountPercent) ? discountPercent : 0;
+    const computedTotal = (lineBase - discountAmount)
+      + (Number.isFinite(packingCharge) ? packingCharge : 0)
+      + (Number.isFinite(transportCharge) ? transportCharge : 0)
+      + (Number.isFinite(agentCommission) ? agentCommission : 0);
     const total = Number.isFinite(Number(item.total)) ? Number(item.total) : computedTotal;
 
     return {
@@ -220,11 +233,14 @@ function normalizeItems(items) {
       piecesPerBox,
       unitType,
       rate,
+      discountPercent,
       packingCharge,
       transportCharge,
       agentName,
+      agentCommission,
       sellingRate,
       notes,
+      lineBase,
       total
     };
   }).filter((item) => (
@@ -233,9 +249,10 @@ function normalizeItems(items) {
       && Number.isFinite(item.piecesPerBox) && item.piecesPerBox > 0
       && !!item.unitType
       && Number.isFinite(item.rate) && item.rate > 0
+      && Number.isFinite(item.discountPercent) && item.discountPercent >= 0 && item.discountPercent <= item.lineBase
       && Number.isFinite(item.packingCharge) && item.packingCharge >= 0
       && Number.isFinite(item.transportCharge) && item.transportCharge >= 0
-      && item.agentName
+      && Number.isFinite(item.agentCommission) && item.agentCommission >= 0
       && Number.isFinite(item.sellingRate) && item.sellingRate > 0
       && Number.isFinite(item.total) && item.total > 0
   ));
@@ -300,12 +317,13 @@ function syncGodownStockMeta(godownId, productId) {
     Math.max(1, Number(latest.pieces) || 1),
     normalizeUnitType(latest.unit_type) || 'Pcs',
     latest.date || null,
+    String(latest.bill_no || '').trim() || null,
     godownId,
     productId
   );
 }
 
-function applyGodownStockDelta(item, godownId, multiplier, purchaseDate) {
+function applyGodownStockDelta(item, godownId, multiplier, purchaseDate, purchaseBillNo = '') {
   const existing = getGodownStockRowStmt.get(godownId, item.productId);
   const deltaBoxes = Number(item.boxes) * multiplier;
   const deltaPieces = Number(item.boxes) * Number(item.piecesPerBox) * multiplier;
@@ -330,6 +348,7 @@ function applyGodownStockDelta(item, godownId, multiplier, purchaseDate) {
         Math.max(1, Number(item.piecesPerBox) || 1),
         normalizeUnitType(item.unitType) || 'Pcs',
         purchaseDate || null,
+        String(purchaseBillNo || '').trim() || null,
         godownId,
         item.productId
       );
@@ -350,13 +369,15 @@ function applyGodownStockDelta(item, godownId, multiplier, purchaseDate) {
       normalizeUnitType(item.unitType) || 'Pcs',
       deltaBoxes,
       deltaPieces,
-      purchaseDate || null
+      purchaseDate || null,
+      String(purchaseBillNo || '').trim() || null
     );
   }
 }
 
-function writePurchaseLedgerEntries(purchaseId, purchaseDate, partyId, deliveryType, purchaseTotal) {
-  const particulars = `Purchase #${purchaseId}`;
+function writePurchaseLedgerEntries(purchaseId, purchaseDate, partyId, deliveryType, purchaseTotal, billNo) {
+  const safeBillNo = String(billNo || purchaseId || '').trim() || String(purchaseId);
+  const particulars = `Purchase Bill #${safeBillNo}`;
   const creditAccount = deliveryType === 'Cash' ? 'Cash' : 'Party';
 
   insertLedgerStmt.run(
@@ -396,7 +417,8 @@ function rebuildPurchaseLedger(purchaseId) {
     purchase.date,
     purchase.party_id,
     normalizeDeliveryType(purchase.delivery_type) || 'Cash',
-    Number(purchase.total) || 0
+    Number(purchase.total) || 0,
+    purchase.bill_no
   );
 }
 
@@ -421,6 +443,7 @@ function syncAffectedGodownMeta(affectedProductKeys) {
 
 const addPurchaseTxn = db.transaction((data) => {
   const purchaseDate = data.date || new Date().toISOString().slice(0, 10);
+  const requestedBillNo = String(data.bill_no || '').trim();
   const partyId = Number(data.party_id);
   const godownId = Number(data.godown_id);
   const deliveryType = normalizeDeliveryType(data.delivery_type);
@@ -436,19 +459,23 @@ const addPurchaseTxn = db.transaction((data) => {
 
   const normalizedItems = normalizeItems(inputItems);
   if (normalizedItems.length !== inputItems.length || normalizedItems.length === 0) {
-    return { success: false, message: 'Each purchase row must have product, qty, rate, charges, agent and selling rate.' };
+    return { success: false, message: 'Each purchase row must have product, qty, discount, rate, charges, agent and selling rate.' };
   }
 
   const purchaseTotal = normalizedItems.reduce((sum, item) => sum + item.total, 0);
-  const purchaseResult = insertPurchaseStmt.run(purchaseDate, partyId, godownId, deliveryType, purchaseTotal);
+  const purchaseResult = insertPurchaseStmt.run(requestedBillNo || null, purchaseDate, partyId, godownId, deliveryType, purchaseTotal);
   const purchaseId = Number(purchaseResult.lastInsertRowid);
+  const effectiveBillNo = requestedBillNo || String(purchaseId);
+  if (!requestedBillNo) {
+    updatePurchaseBillNoStmt.run(effectiveBillNo, purchaseId);
+  }
 
   normalizedItems.forEach((item) => {
     const productId = getOrCreateProduct(item, true);
     const enrichedItem = { ...item, productId };
 
     applyAggregateStockDelta(productId, item.boxes, item.piecesPerBox, 1);
-    applyGodownStockDelta(enrichedItem, godownId, 1, purchaseDate);
+    applyGodownStockDelta(enrichedItem, godownId, 1, purchaseDate, effectiveBillNo);
 
     insertPurchaseItemStmt.run(
       purchaseId,
@@ -457,16 +484,18 @@ const addPurchaseTxn = db.transaction((data) => {
       item.piecesPerBox,
       item.unitType,
       item.rate,
+      item.discountPercent,
       item.packingCharge,
       item.transportCharge,
       item.agentName,
+      item.agentCommission,
       getEffectiveSellingRate(item),
       item.notes,
       item.total
     );
   });
 
-  writePurchaseLedgerEntries(purchaseId, purchaseDate, partyId, deliveryType, purchaseTotal);
+  writePurchaseLedgerEntries(purchaseId, purchaseDate, partyId, deliveryType, purchaseTotal, effectiveBillNo);
   return { success: true, id: purchaseId };
 });
 
@@ -478,6 +507,7 @@ const updatePurchaseTxn = db.transaction((id, data) => {
   }
 
   const purchaseDate = data.date || existingPurchase.date;
+  const billNo = String(data.bill_no ?? existingPurchase.bill_no ?? existingPurchase.id ?? '').trim() || String(existingPurchase.id);
   const partyId = Number(data.party_id) || existingPurchase.party_id;
   const godownId = Number(data.godown_id) || Number(existingPurchase.godown_id);
   const deliveryType = normalizeDeliveryType(data.delivery_type || existingPurchase.delivery_type);
@@ -493,7 +523,7 @@ const updatePurchaseTxn = db.transaction((id, data) => {
   const inputItems = Array.isArray(data.items) ? data.items : [];
   const normalizedItems = normalizeItems(inputItems);
   if (normalizedItems.length !== inputItems.length || normalizedItems.length === 0) {
-    return { success: false, message: 'Each purchase row must have product, qty, rate, charges, agent and selling rate.' };
+    return { success: false, message: 'Each purchase row must have product, qty, discount, rate, charges, agent and selling rate.' };
   }
 
   const affectedKeys = new Set();
@@ -509,14 +539,15 @@ const updatePurchaseTxn = db.transaction((id, data) => {
       packingCharge: Number(item.packing_charge) || 0,
       transportCharge: Number(item.transport_charge) || 0,
       agentName: String(item.agent_name || ''),
+      agentCommission: Number(item.agent_commission) || 0,
       sellingRate: Number(item.selling_rate) || Number(item.rate) || 0
     };
-    applyGodownStockDelta(rollbackItem, Number(existingPurchase.godown_id), -1, existingPurchase.date);
+    applyGodownStockDelta(rollbackItem, Number(existingPurchase.godown_id), -1, existingPurchase.date, existingPurchase.bill_no || existingPurchase.id);
     affectedKeys.add(`${Number(existingPurchase.godown_id)}:${item.product_id}`);
   });
 
   const purchaseTotal = normalizedItems.reduce((sum, item) => sum + item.total, 0);
-  updatePurchaseStmt.run(purchaseDate, partyId, godownId, deliveryType, purchaseTotal, purchaseId);
+  updatePurchaseStmt.run(billNo, purchaseDate, partyId, godownId, deliveryType, purchaseTotal, purchaseId);
 
   deletePurchaseItemsStmt.run(purchaseId);
   normalizedItems.forEach((item) => {
@@ -524,7 +555,7 @@ const updatePurchaseTxn = db.transaction((id, data) => {
     const enrichedItem = { ...item, productId };
 
     applyAggregateStockDelta(productId, item.boxes, item.piecesPerBox, 1);
-    applyGodownStockDelta(enrichedItem, godownId, 1, purchaseDate);
+    applyGodownStockDelta(enrichedItem, godownId, 1, purchaseDate, billNo);
     affectedKeys.add(`${godownId}:${productId}`);
 
     insertPurchaseItemStmt.run(
@@ -534,9 +565,11 @@ const updatePurchaseTxn = db.transaction((id, data) => {
       item.piecesPerBox,
       item.unitType,
       item.rate,
+      item.discountPercent,
       item.packingCharge,
       item.transportCharge,
       item.agentName,
+      item.agentCommission,
       getEffectiveSellingRate(item),
       item.notes,
       item.total
@@ -545,7 +578,7 @@ const updatePurchaseTxn = db.transaction((id, data) => {
 
   syncAffectedGodownMeta(affectedKeys);
   deleteLedgerByPurchaseStmt.run(purchaseId, `Purchase #${purchaseId}`);
-  writePurchaseLedgerEntries(purchaseId, purchaseDate, partyId, deliveryType, purchaseTotal);
+  writePurchaseLedgerEntries(purchaseId, purchaseDate, partyId, deliveryType, purchaseTotal, billNo);
   return { success: true, id: purchaseId };
 });
 
@@ -569,9 +602,10 @@ const deletePurchaseTxn = db.transaction((id) => {
       packingCharge: Number(item.packing_charge) || 0,
       transportCharge: Number(item.transport_charge) || 0,
       agentName: String(item.agent_name || ''),
+      agentCommission: Number(item.agent_commission) || 0,
       sellingRate: Number(item.selling_rate) || Number(item.rate) || 0
     };
-    applyGodownStockDelta(rollbackItem, Number(existingPurchase.godown_id), -1, existingPurchase.date);
+    applyGodownStockDelta(rollbackItem, Number(existingPurchase.godown_id), -1, existingPurchase.date, existingPurchase.bill_no || existingPurchase.id);
     affectedKeys.add(`${Number(existingPurchase.godown_id)}:${item.product_id}`);
   });
 
@@ -615,14 +649,17 @@ function getPurchaseDetails(id) {
     }
 
     const items = getPurchaseItemsStmt.all(purchaseId).map((item) => ({
+      product_id: item.product_id,
       product_name: item.product_name,
       boxes: item.boxes,
       pieces: item.pieces,
       unit_type: normalizeUnitType(item.unit_type) || 'Pcs',
       rate: item.rate,
+      discount_percent: Number(item.discount_percent) || 0,
       packing_charge: Number(item.packing_charge) || 0,
       transport_charge: Number(item.transport_charge) || 0,
       agent_name: item.agent_name || '',
+      agent_commission: Number(item.agent_commission) || 0,
       selling_rate: Number(item.selling_rate) || Number(item.rate) || 0,
       notes: item.notes || '',
       total: item.total
@@ -630,6 +667,7 @@ function getPurchaseDetails(id) {
 
     return {
       ...purchase,
+      bill_no: String(purchase.bill_no || purchase.id || ''),
       delivery_type: normalizeDeliveryType(purchase.delivery_type) || 'Cash',
       items
     };
@@ -642,14 +680,20 @@ function getPurchases() {
   try {
     const stmt = db.prepare(
       `SELECT pu.id, pu.date, pu.party_id, p.name AS party_name,
+              COALESCE(pu.bill_no, CAST(pu.id AS TEXT)) AS bill_no,
+              pu.godown_id,
               pu.total,
               pr.name AS product_name,
               COALESCE(pi.boxes, 0) AS boxes,
               COALESCE(pi.pieces, 0) AS pieces,
               COALESCE(pi.unit_type, 'Pcs') AS unit_type,
               COALESCE(pi.rate, 0) AS rate,
+              COALESCE(pi.discount_percent, 0) AS discount_percent,
               COALESCE(pi.packing_charge, 0) AS packing_charge,
               COALESCE(pi.transport_charge, 0) AS transport_charge,
+              COALESCE(pi.agent_name, '') AS agent_name,
+              COALESCE(pi.agent_commission, 0) AS agent_commission,
+              COALESCE(pi.selling_rate, pi.rate) AS selling_rate,
               pi.id AS purchase_item_id
        FROM purchases pu
        JOIN parties p ON p.id = pu.party_id
@@ -743,6 +787,7 @@ function updateGodownStockItem(godownId, productId, data) {
   const nextTransport = Number(data?.transport_charge);
   const nextSelling = Number(data?.selling_rate);
   const nextDate = String(data?.last_purchase_date || existing.last_purchase_date || '').trim();
+  const nextBillNo = String(data?.last_purchase_bill_no || existing.last_purchase_bill_no || '').trim();
 
   if (
     !Number.isFinite(nextBoxes) || nextBoxes <= 0
@@ -771,6 +816,7 @@ function updateGodownStockItem(godownId, productId, data) {
       nextPiecesPerBox,
       nextUnitType,
       nextDate || null,
+      nextBillNo || null,
       targetGodownId,
       targetProductId
     );
@@ -838,7 +884,8 @@ function getGodownStock(godownId, query = '') {
               gs.pieces_per_box,
               COALESCE(gs.unit_type, 'Pcs') AS unit_type,
               gs.total_pieces,
-              gs.last_purchase_date
+              gs.last_purchase_date,
+              COALESCE(gs.last_purchase_bill_no, '') AS last_purchase_bill_no
        FROM godown_stock gs
        JOIN products p ON p.id = gs.product_id
        WHERE gs.godown_id = ? AND p.name LIKE ?
@@ -881,10 +928,13 @@ function getPurchaseRates(query = '') {
     const searchTerm = `%${String(query || '').trim()}%`;
     const stmt = db.prepare(
       `SELECT pi.id, pu.date, p.name AS product_name,
+              COALESCE(pu.bill_no, CAST(pu.id AS TEXT)) AS bill_no,
               COALESCE(pi.unit_type, 'Pcs') AS unit_type,
               pi.rate, COALESCE(pi.selling_rate, pi.rate) AS selling_rate,
+              COALESCE(pi.discount_percent, 0) AS discount_percent,
               COALESCE(pi.packing_charge, 0) AS packing_charge,
               COALESCE(pi.transport_charge, 0) AS transport_charge,
+              COALESCE(pi.agent_commission, 0) AS agent_commission,
               COALESCE(pi.agent_name, '') AS agent_name,
               pa.name AS party_name,
               pi.purchase_id
@@ -913,33 +963,51 @@ const updatePurchaseRateTxn = db.transaction((id, data) => {
     return { success: false, message: 'Invalid rate' };
   }
 
+  const updatedDiscountPercent = Number.isFinite(Number(data.discount_percent))
+    ? Number(data.discount_percent)
+    : Number(item.discount_percent) || 0;
+
   const updatedPackingCharge = Number.isFinite(Number(data.packing_charge))
     ? Number(data.packing_charge)
     : Number(item.packing_charge) || 0;
   const updatedTransportCharge = Number.isFinite(Number(data.transport_charge))
     ? Number(data.transport_charge)
     : Number(item.transport_charge) || 0;
-  const updatedAgentName = String(data.agent_name ?? item.agent_name ?? '').trim();
+  const updatedAgentName = String(data.agent_name ?? item.agent_name ?? '').trim() || 'Supplier';
+  const updatedAgentCommission = Number.isFinite(Number(data.agent_commission))
+    ? Number(data.agent_commission)
+    : Number(item.agent_commission) || 0;
   const updatedSellingRate = Number.isFinite(Number(data.selling_rate)) && Number(data.selling_rate) > 0
     ? Number(data.selling_rate)
     : Number(item.selling_rate) || updatedRate;
   const updatedUnitType = normalizeUnitType(data.unit_type || item.unit_type || 'Pcs');
   const updatedNotes = String(data.notes ?? item.notes ?? '').trim();
 
-  if (!updatedAgentName) {
-    return { success: false, message: 'Agent name is required.' };
+  if (!Number.isFinite(updatedAgentCommission) || updatedAgentCommission < 0) {
+    return { success: false, message: 'Agent commission must be zero or more.' };
   }
 
   if (!updatedUnitType) {
     return { success: false, message: 'Unit type is required.' };
   }
 
-  const updatedTotal = (Number(item.boxes) * Number(item.pieces) * updatedRate) + updatedPackingCharge + updatedTransportCharge;
+  const lineBase = Number(item.boxes) * Number(item.pieces) * updatedRate;
+  if (!Number.isFinite(updatedDiscountPercent) || updatedDiscountPercent < 0 || updatedDiscountPercent > lineBase) {
+    return { success: false, message: 'Discount must be between 0 and line amount.' };
+  }
+
+  const discountAmount = updatedDiscountPercent;
+  const updatedTotal = (lineBase - discountAmount)
+    + updatedPackingCharge
+    + updatedTransportCharge
+    + updatedAgentCommission;
   updatePurchaseItemRateStmt.run(
     updatedRate,
+    updatedDiscountPercent,
     updatedPackingCharge,
     updatedTransportCharge,
     updatedAgentName,
+    updatedAgentCommission,
     updatedSellingRate,
     updatedUnitType,
     updatedNotes,
@@ -966,12 +1034,14 @@ const deletePurchaseRateTxn = db.transaction((id) => {
     boxes: Number(item.boxes),
     piecesPerBox: Number(item.pieces),
     rate: Number(item.rate),
+    discountPercent: Number(item.discount_percent) || 0,
     packingCharge: Number(item.packing_charge) || 0,
     transportCharge: Number(item.transport_charge) || 0,
     agentName: String(item.agent_name || ''),
+    agentCommission: Number(item.agent_commission) || 0,
     sellingRate: Number(item.selling_rate) || Number(item.rate) || 0
   };
-  applyGodownStockDelta(rollbackItem, Number(item.godown_id), -1, item.date);
+  applyGodownStockDelta(rollbackItem, Number(item.godown_id), -1, item.date, item.bill_no || item.purchase_id);
 
   deletePurchaseItemStmt.run(rateId);
   syncGodownStockMeta(Number(item.godown_id), Number(item.product_id));

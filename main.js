@@ -1,18 +1,30 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const dns = require('dns');
-const { autoUpdater } = require('electron-updater');
 const partyService = require('./services/partyService');
 const paymentService = require('./services/paymentService');
 const purchaseService = require('./services/purchaseService');
+const rawMaterialService = require('./services/rawMaterialService');
 const salesService = require('./services/salesService');
+const returnService = require('./services/returnService');
 const profitLossService = require('./services/profitLossService');
 const settingsService = require('./services/settingsService');
+const labourAttendanceService = require('./services/labourAttendanceService');
 const db = require('./database/db');
+const XLSX = require('xlsx');
 
 const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 let updateCheckTimer = null;
+let autoUpdater = null;
+
+function getAutoUpdater() {
+  if (!autoUpdater) {
+    autoUpdater = require('electron-updater').autoUpdater;
+  }
+
+  return autoUpdater;
+}
 
 function toCsv(rows) {
   if (!rows || rows.length === 0) {
@@ -49,6 +61,94 @@ function parseCsv(content) {
     });
     return row;
   });
+}
+
+function normalizeBackupCellValue(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  if (Buffer.isBuffer(value)) {
+    return value.toString('base64');
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return value;
+}
+
+function normalizeBackupRows(rows) {
+  return (Array.isArray(rows) ? rows : []).map((row) => {
+    const normalized = {};
+    Object.entries(row || {}).forEach(([key, value]) => {
+      normalized[key] = normalizeBackupCellValue(value);
+    });
+    return normalized;
+  });
+}
+
+function escapeSqliteIdentifier(identifier) {
+  return `"${String(identifier || '').replace(/"/g, '""')}"`;
+}
+
+function makeUniqueSheetName(rawName, usedNames) {
+  const fallback = 'Sheet';
+  const base = String(rawName || fallback).replace(/[\\/*?:\[\]]/g, ' ').trim() || fallback;
+  let candidate = base.slice(0, 31) || fallback;
+  let suffix = 1;
+
+  while (usedNames.has(candidate.toLowerCase())) {
+    const suffixText = `_${suffix}`;
+    const maxBaseLength = Math.max(1, 31 - suffixText.length);
+    candidate = `${base.slice(0, maxBaseLength)}${suffixText}`;
+    suffix += 1;
+  }
+
+  usedNames.add(candidate.toLowerCase());
+  return candidate;
+}
+
+function toNumber(value) {
+  const parsed = Number(value || 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getSingleValue(sql, fallback = 0) {
+  try {
+    const row = db.prepare(sql).get();
+    if (!row) {
+      return fallback;
+    }
+    const firstKey = Object.keys(row)[0];
+    return row[firstKey] ?? fallback;
+  } catch (_error) {
+    return fallback;
+  }
+}
+
+function buildBackupDashboardRows(tableCounts) {
+  const totalTables = Object.keys(tableCounts || {}).length;
+  const totalRows = Object.values(tableCounts || {}).reduce((sum, value) => sum + toNumber(value), 0);
+  const now = new Date();
+
+  return [
+    { Metric: 'Generated On', Value: now.toLocaleString('en-IN') },
+    { Metric: 'Database Path', Value: db.dbPath || '' },
+    { Metric: 'Total Tables', Value: totalTables },
+    { Metric: 'Total Rows', Value: totalRows },
+    { Metric: 'Parties Count', Value: getSingleValue('SELECT COUNT(*) AS value FROM parties', 0) },
+    { Metric: 'Purchases Count', Value: getSingleValue('SELECT COUNT(*) AS value FROM purchases', 0) },
+    { Metric: 'Sales Count', Value: getSingleValue('SELECT COUNT(*) AS value FROM sales', 0) },
+    { Metric: 'Payments Count', Value: getSingleValue('SELECT COUNT(*) AS value FROM payments', 0) },
+    { Metric: 'Ledger Entries', Value: getSingleValue('SELECT COUNT(*) AS value FROM ledger', 0) },
+    { Metric: 'Raw Material Entries', Value: getSingleValue('SELECT COUNT(*) AS value FROM raw_material_transactions', 0) },
+    { Metric: 'Purchase Total Amount', Value: toNumber(getSingleValue('SELECT COALESCE(SUM(total), 0) AS value FROM purchases', 0)).toFixed(2) },
+    { Metric: 'Sales Total Amount', Value: toNumber(getSingleValue('SELECT COALESCE(SUM(total), 0) AS value FROM sales', 0)).toFixed(2) },
+    { Metric: 'Payment IN Total', Value: toNumber(getSingleValue("SELECT COALESCE(SUM(amount), 0) AS value FROM payments WHERE type = 'IN'", 0)).toFixed(2) },
+    { Metric: 'Payment OUT Total', Value: toNumber(getSingleValue("SELECT COALESCE(SUM(amount), 0) AS value FROM payments WHERE type = 'OUT'", 0)).toFixed(2) }
+  ];
 }
 
 function createAutoBackup() {
@@ -105,26 +205,28 @@ function configureAutoUpdater() {
     return;
   }
 
-  autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = true;
+  const updater = getAutoUpdater();
 
-  autoUpdater.on('checking-for-update', () => {
+  updater.autoDownload = true;
+  updater.autoInstallOnAppQuit = true;
+
+  updater.on('checking-for-update', () => {
     console.log('[updater] Checking for updates...');
   });
 
-  autoUpdater.on('update-available', (info) => {
+  updater.on('update-available', (info) => {
     console.log(`[updater] Update available: ${info.version}`);
   });
 
-  autoUpdater.on('update-not-available', () => {
+  updater.on('update-not-available', () => {
     console.log('[updater] No update available.');
   });
 
-  autoUpdater.on('error', (error) => {
+  updater.on('error', (error) => {
     console.error('[updater] Error:', error && error.message ? error.message : error);
   });
 
-  autoUpdater.on('update-downloaded', async (info) => {
+  updater.on('update-downloaded', async (info) => {
     try {
       const result = await dialog.showMessageBox({
         type: 'info',
@@ -137,7 +239,7 @@ function configureAutoUpdater() {
       });
 
       if (result.response === 0) {
-        autoUpdater.quitAndInstall();
+        updater.quitAndInstall();
       }
     } catch (error) {
       console.error('[updater] Failed to show update dialog:', error);
@@ -157,7 +259,7 @@ async function checkForUpdatesIfOnline() {
   }
 
   try {
-    await autoUpdater.checkForUpdates();
+    await getAutoUpdater().checkForUpdates();
   } catch (error) {
     console.error('[updater] Failed to check for updates:', error && error.message ? error.message : error);
   }
@@ -199,6 +301,14 @@ ipcMain.handle('search-parties', async (_event, query) => {
   return partyService.searchParties(query);
 });
 
+ipcMain.handle('get-indian-states', async () => {
+  return partyService.getIndianStates();
+});
+
+ipcMain.handle('get-indian-cities', async (_event, stateNameOrCode) => {
+  return partyService.getIndianCities(stateNameOrCode);
+});
+
 ipcMain.handle('add-payment', async (_event, data) => {
   return paymentService.addPayment(data);
 });
@@ -217,6 +327,18 @@ ipcMain.handle('get-payments', async (_event, type) => {
 
 ipcMain.handle('get-ledger', async (_event, filters) => {
   return paymentService.getLedger(filters || {});
+});
+
+ipcMain.handle('add-manual-ledger-entry', async (_event, data) => {
+  return paymentService.addManualLedgerEntry(data || {});
+});
+
+ipcMain.handle('update-manual-ledger-entry', async (_event, id, data) => {
+  return paymentService.updateManualLedgerEntry(id, data || {});
+});
+
+ipcMain.handle('delete-manual-ledger-entry', async (_event, id) => {
+  return paymentService.deleteManualLedgerEntry(id);
 });
 
 ipcMain.handle('add-purchase', async (_event, data) => {
@@ -283,6 +405,30 @@ ipcMain.handle('delete-purchase-rate', async (_event, id) => {
   return purchaseService.deletePurchaseRate(id);
 });
 
+ipcMain.handle('get-raw-material-stock', async (_event, query) => {
+  return rawMaterialService.getRawMaterialStock(query || '');
+});
+
+ipcMain.handle('get-raw-material-transactions', async (_event, filters) => {
+  return rawMaterialService.getRawMaterialTransactions(filters || {});
+});
+
+ipcMain.handle('get-raw-material-products', async (_event, query) => {
+  return rawMaterialService.getRawMaterialProducts(query || '');
+});
+
+ipcMain.handle('add-raw-material-transaction', async (_event, data) => {
+  return rawMaterialService.addRawMaterialTransaction(data || {});
+});
+
+ipcMain.handle('update-raw-material-transaction', async (_event, id, data) => {
+  return rawMaterialService.updateRawMaterialTransaction(id, data || {});
+});
+
+ipcMain.handle('delete-raw-material-transaction', async (_event, id) => {
+  return rawMaterialService.deleteRawMaterialTransaction(id);
+});
+
 ipcMain.handle('add-sale', async (_event, data) => {
   return salesService.addSale(data);
 });
@@ -301,6 +447,135 @@ ipcMain.handle('get-sale-details', async (_event, id) => {
 
 ipcMain.handle('get-sales', async () => {
   return salesService.getSales();
+});
+
+ipcMain.handle('add-purchase-return', async (_event, data) => {
+  return returnService.addPurchaseReturn(data || {});
+});
+
+ipcMain.handle('delete-purchase-return', async (_event, id) => {
+  return returnService.deletePurchaseReturn(id);
+});
+
+ipcMain.handle('get-purchase-returns', async () => {
+  return returnService.getPurchaseReturns();
+});
+
+ipcMain.handle('get-purchase-return-details', async (_event, id) => {
+  return returnService.getPurchaseReturnDetails(id);
+});
+
+ipcMain.handle('add-sales-return', async (_event, data) => {
+  return returnService.addSalesReturn(data || {});
+});
+
+ipcMain.handle('delete-sales-return', async (_event, id) => {
+  return returnService.deleteSalesReturn(id);
+});
+
+ipcMain.handle('get-sales-returns', async () => {
+  return returnService.getSalesReturns();
+});
+
+ipcMain.handle('get-sales-return-details', async (_event, id) => {
+  return returnService.getSalesReturnDetails(id);
+});
+
+ipcMain.handle('add-labour-entry', async (_event, data) => {
+  return labourAttendanceService.addLabourEntry(data || {});
+});
+
+ipcMain.handle('update-labour-entry', async (_event, id, data) => {
+  return labourAttendanceService.updateLabourEntry(id, data || {});
+});
+
+ipcMain.handle('delete-labour-entry', async (_event, id) => {
+  return labourAttendanceService.deleteLabourEntry(id);
+});
+
+ipcMain.handle('get-labour-entries', async () => {
+  return labourAttendanceService.getLabourEntries();
+});
+
+ipcMain.handle('get-labour-weekly-summary', async () => {
+  return labourAttendanceService.getLabourWeeklySummary();
+});
+
+ipcMain.handle('share-whatsapp', async (_event, payload) => {
+  try {
+    const message = String(payload?.message || '').trim();
+    if (!message) {
+      return { success: false, message: 'Share message is required.' };
+    }
+
+    const phone = String(payload?.phone || '').replace(/\D/g, '');
+    const encoded = encodeURIComponent(message);
+    const url = phone
+      ? `https://wa.me/${phone}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`;
+
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: error.message || 'Unable to open WhatsApp share.' };
+  }
+});
+
+ipcMain.handle('save-pdf', async (_event, payload) => {
+  let pdfWindow;
+  try {
+    const html = String(payload?.html || '').trim();
+    if (!html) {
+      return { success: false, message: 'PDF content is required.' };
+    }
+
+    const rawName = String(payload?.defaultFileName || 'document.pdf').trim() || 'document.pdf';
+    const sanitizedName = rawName.replace(/[<>:"/\\|?*]/g, '_');
+    const defaultFileName = sanitizedName.toLowerCase().endsWith('.pdf')
+      ? sanitizedName
+      : `${sanitizedName}.pdf`;
+
+    pdfWindow = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        contextIsolation: true,
+        sandbox: false
+      }
+    });
+
+    await pdfWindow.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(html)}`);
+    const pdfBuffer = await pdfWindow.webContents.printToPDF({
+      pageSize: 'A4',
+      printBackground: true,
+      margins: {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      }
+    });
+
+    const saveResult = await dialog.showSaveDialog({
+      title: 'Save PDF',
+      defaultPath: path.join(app.getPath('downloads'), defaultFileName),
+      filters: [
+        { name: 'PDF Files', extensions: ['pdf'] }
+      ]
+    });
+
+    if (saveResult.canceled || !saveResult.filePath) {
+      return { success: false, canceled: true, message: 'Save cancelled.' };
+    }
+
+    fs.writeFileSync(saveResult.filePath, pdfBuffer);
+    return { success: true, filePath: saveResult.filePath };
+  } catch (error) {
+    return { success: false, message: error.message || 'Unable to save PDF.' };
+  } finally {
+    if (pdfWindow && !pdfWindow.isDestroyed()) {
+      pdfWindow.destroy();
+    }
+  }
 });
 
 ipcMain.handle('get-profit-loss', async () => {
@@ -353,19 +628,91 @@ ipcMain.handle('save-settings', async (_event, data) => {
 
 ipcMain.handle('create-backup', async () => {
   try {
-    const defaultName = `backup-${new Date().toISOString().slice(0, 10)}.db`;
+    const defaultName = `backup-${new Date().toISOString().slice(0, 10)}.xlsx`;
     const result = await dialog.showSaveDialog({
       title: 'Create Backup',
       defaultPath: path.join(app.getPath('documents'), defaultName),
-      filters: [{ name: 'SQLite DB', extensions: ['db'] }]
+      filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }]
     });
 
     if (result.canceled || !result.filePath) {
       return { success: false, message: 'Backup cancelled.' };
     }
 
-    fs.copyFileSync(db.dbPath, result.filePath);
-    return { success: true, message: 'Backup created successfully.' };
+    const excelBackupPath = String(result.filePath).toLowerCase().endsWith('.xlsx')
+      ? result.filePath
+      : `${result.filePath}.xlsx`;
+
+    // Ensure latest WAL writes are merged before file copy backup.
+    try {
+      db.pragma('wal_checkpoint(TRUNCATE)');
+    } catch (_checkpointError) {
+      // Continue backup copy even if checkpoint is unavailable.
+    }
+
+    const workbook = XLSX.utils.book_new();
+    const usedSheetNames = new Set();
+    const tableNameRows = db.prepare(
+      `SELECT name
+       FROM sqlite_master
+       WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+       ORDER BY name ASC`
+    ).all();
+
+    const tableNames = tableNameRows
+      .map((row) => String(row?.name || '').trim())
+      .filter(Boolean);
+
+    const tableCounts = {};
+    tableNames.forEach((tableName) => {
+      const countRow = db.prepare(`SELECT COUNT(*) AS value FROM ${escapeSqliteIdentifier(tableName)}`).get();
+      tableCounts[tableName] = toNumber(countRow?.value || 0);
+    });
+
+    const dashboardRows = buildBackupDashboardRows(tableCounts);
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(dashboardRows),
+      makeUniqueSheetName('Dashboard', usedSheetNames)
+    );
+
+    const countRows = Object.entries(tableCounts).map(([tableName, count]) => ({
+      Table: tableName,
+      Rows: count
+    }));
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(countRows.length > 0 ? countRows : [{ Table: 'No tables', Rows: 0 }]),
+      makeUniqueSheetName('Table Counts', usedSheetNames)
+    );
+
+    tableNames.forEach((tableName) => {
+      const rows = db.prepare(`SELECT * FROM ${escapeSqliteIdentifier(tableName)}`).all();
+      const normalizedRows = normalizeBackupRows(rows);
+      const rowsForSheet = normalizedRows.length > 0
+        ? normalizedRows
+        : [{ Info: `No rows in ${tableName}` }];
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(rowsForSheet),
+        makeUniqueSheetName(tableName, usedSheetNames)
+      );
+    });
+
+    XLSX.writeFile(workbook, excelBackupPath, {
+      bookType: 'xlsx',
+      compression: true
+    });
+
+    const parsedPath = path.parse(excelBackupPath);
+    const dbBackupPath = path.join(parsedPath.dir, `${parsedPath.name}.db`);
+    fs.copyFileSync(db.dbPath, dbBackupPath);
+
+    return {
+      success: true,
+      message: `Excel backup created successfully. Restore copy also saved as ${path.basename(dbBackupPath)}.`
+    };
   } catch (error) {
     return { success: false, message: error.message || 'Backup failed.' };
   }
@@ -531,7 +878,19 @@ ipcMain.handle('import-parties-csv', async () => {
 });
 
 function createWindow() {
+  let startupTitle = 'Billing Software';
+  try {
+    const settings = settingsService.getSettings();
+    const name = String(settings?.shop_name || '').trim();
+    if (name) {
+      startupTitle = name;
+    }
+  } catch (_error) {
+    // Keep default title if settings are unavailable during startup.
+  }
+
   const win = new BrowserWindow({
+    title: startupTitle,
     width: 1200,
     height: 800,
     webPreferences: {
