@@ -239,7 +239,10 @@ function configureAutoUpdater() {
       });
 
       if (result.response === 0) {
-        updater.quitAndInstall();
+        console.log('[updater] Restarting to apply downloaded update...');
+        setImmediate(() => {
+          updater.quitAndInstall(false, true);
+        });
       }
     } catch (error) {
       console.error('[updater] Failed to show update dialog:', error);
