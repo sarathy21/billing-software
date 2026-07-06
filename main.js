@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const dns = require('dns');
@@ -13,6 +13,13 @@ const settingsService = require('./services/settingsService');
 const labourAttendanceService = require('./services/labourAttendanceService');
 const db = require('./database/db');
 const XLSX = require('xlsx');
+
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL] Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 let updateCheckTimer = null;
@@ -199,6 +206,126 @@ function hasInternetConnection(timeoutMs = 3500) {
   });
 }
 
+let latestCheckedVersion = '';
+
+function setupApplicationMenu() {
+  const isMac = process.platform === 'darwin';
+
+  const template = [
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    {
+      label: 'File',
+      submenu: [
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        ...(isMac ? [
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+          { type: 'separator' },
+          {
+            label: 'Speech',
+            submenu: [
+              { role: 'startSpeaking' },
+              { role: 'stopSpeaking' }
+            ]
+          }
+        ] : [
+          { role: 'delete' },
+          { type: 'separator' },
+          { role: 'selectAll' }
+        ])
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac ? [
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+        ] : [
+          { role: 'close' }
+        ])
+      ]
+    },
+    {
+      role: 'help',
+      submenu: [
+        {
+          label: 'Check for Updates',
+          click: async () => {
+            if (!app.isPackaged) {
+              dialog.showMessageBox({ type: 'info', title: 'Check for Updates', message: 'Auto-update is disabled in development mode.' });
+              return;
+            }
+            const online = await hasInternetConnection();
+            if (!online) {
+              dialog.showMessageBox({ type: 'error', title: 'Offline', message: 'Cannot check for updates without internet connection.' });
+              return;
+            }
+            getAutoUpdater().checkForUpdates();
+          }
+        },
+        {
+          label: 'About',
+          click: () => {
+            dialog.showMessageBox({
+              type: 'info',
+              title: 'About',
+              message: 'Billing Software',
+              detail: `Current version: ${app.getVersion()}\nLatest checked version: ${latestCheckedVersion || 'Unknown'}`
+            });
+          }
+        }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
 function configureAutoUpdater() {
   if (!app.isPackaged) {
     console.log('[updater] Skipping auto-update in development mode.');
@@ -216,10 +343,26 @@ function configureAutoUpdater() {
 
   updater.on('update-available', (info) => {
     console.log(`[updater] Update available: ${info.version}`);
+    latestCheckedVersion = info.version;
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update Available',
+      message: 'A new version is available.'
+    });
   });
 
-  updater.on('update-not-available', () => {
+  updater.on('download-progress', (progressObj) => {
+    const wins = BrowserWindow.getAllWindows();
+    if (wins.length > 0 && wins[0]) {
+      wins[0].setProgressBar(progressObj.percent / 100);
+    }
+  });
+
+  updater.on('update-not-available', (info) => {
     console.log('[updater] No update available.');
+    if (info && info.version) {
+      latestCheckedVersion = info.version;
+    }
   });
 
   updater.on('error', (error) => {
@@ -228,14 +371,18 @@ function configureAutoUpdater() {
 
   updater.on('update-downloaded', async (info) => {
     try {
+      const wins = BrowserWindow.getAllWindows();
+      if (wins.length > 0 && wins[0]) {
+        wins[0].setProgressBar(-1);
+      }
+      
       const result = await dialog.showMessageBox({
         type: 'info',
         buttons: ['Restart now', 'Later'],
         defaultId: 0,
         cancelId: 1,
         title: 'Update Ready',
-        message: `Version ${info.version} has been downloaded.`,
-        detail: 'Restart the app to apply this update.'
+        message: 'Update downloaded. Restart now?'
       });
 
       if (result.response === 0) {
@@ -273,7 +420,9 @@ function startAutoUpdateChecks() {
     return;
   }
 
-  checkForUpdatesIfOnline();
+  setTimeout(() => {
+    checkForUpdatesIfOnline();
+  }, 10000);
 
   if (updateCheckTimer) {
     clearInterval(updateCheckTimer);
@@ -430,6 +579,14 @@ ipcMain.handle('update-raw-material-transaction', async (_event, id, data) => {
 
 ipcMain.handle('delete-raw-material-transaction', async (_event, id) => {
   return rawMaterialService.deleteRawMaterialTransaction(id);
+});
+
+ipcMain.handle('update-raw-material-product-name', async (_event, oldName, newName) => {
+  return rawMaterialService.updateRawMaterialProductName(oldName, newName);
+});
+
+ipcMain.handle('delete-raw-material-product', async (_event, productName) => {
+  return rawMaterialService.deleteRawMaterialProduct(productName);
 });
 
 ipcMain.handle('add-sale', async (_event, data) => {
@@ -881,6 +1038,7 @@ ipcMain.handle('import-parties-csv', async () => {
 });
 
 function createWindow() {
+  console.log('[CHECKPOINT] 5. BrowserWindow creating');
   let startupTitle = 'Billing Software';
   try {
     const settings = settingsService.getSettings();
@@ -888,28 +1046,44 @@ function createWindow() {
     if (name) {
       startupTitle = name;
     }
-  } catch (_error) {
-    // Keep default title if settings are unavailable during startup.
+  } catch (error) {
+    console.error('[ERROR] Settings Service Error:', error);
   }
 
-  const win = new BrowserWindow({
-    title: startupTitle,
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-  });
+  try {
+    console.log('[CHECKPOINT] 6. preload path resolved:', path.join(__dirname, 'preload.js'));
+    const win = new BrowserWindow({
+      title: startupTitle,
+      width: 1200,
+      height: 800,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false
+      }
+    });
 
-  win.loadFile('renderer/index.html');
+    console.log('[CHECKPOINT] 7. loadFile called');
+    win.loadFile('renderer/index.html');
+    console.log('[CHECKPOINT] 8. window created successfully');
+  } catch (error) {
+    console.error('[ERROR] Failed to create BrowserWindow:', error);
+  }
 }
 
+console.log('[CHECKPOINT] 1. App starting');
 app.whenReady().then(() => {
-  createWindow();
-  configureAutoUpdater();
-  startAutoUpdateChecks();
+  console.log('[CHECKPOINT] 2. app.whenReady triggered');
+  try {
+    setupApplicationMenu();
+    createWindow();
+    configureAutoUpdater();
+    startAutoUpdateChecks();
+  } catch (error) {
+    console.error('[ERROR] Error in app.whenReady handler:', error);
+  }
+}).catch(err => {
+  console.error('[ERROR] app.whenReady Promise rejected:', err);
 });
 
 app.on('before-quit', () => {

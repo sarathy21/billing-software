@@ -15,6 +15,7 @@ This repository now includes:
 - Party ledger with manual entries, WhatsApp sharing, and PDF export.
 - Profile settings with logo upload support.
 - Excel backup export plus a companion `.db` copy for restore compatibility.
+- Integrated Auto Update system via GitHub Releases with background downloading and taskbar progress.
 
 ## Project Structure
 

@@ -3172,14 +3172,11 @@ function onRawMaterialEntryTypeChange() {
   const isOut = entryType === 'OUT';
   const rateWrap = document.getElementById('rawMaterialRateWrap');
   const placeWrap = document.getElementById('rawMaterialPlaceWrap');
-  const detailsWrap = document.getElementById('rawMaterialProductDetailsWrap');
 
   if (rateWrap) {
     rateWrap.classList.toggle('hidden', isOut);
   }
   if (placeWrap) {
-    placeWrap.classList.toggle('hidden', isOut);
-  }
   if (detailsWrap) {
     detailsWrap.classList.toggle('hidden', isOut);
   }

@@ -301,7 +301,7 @@ db.prepare(`
     quantity REAL NOT NULL,
     unit_type TEXT NOT NULL DEFAULT 'Pcs',
     rate REAL NOT NULL DEFAULT 0,
-    purchase_place TEXT,
+    product_details TEXT,
     notes TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (party_id) REFERENCES parties (id)
@@ -436,6 +436,13 @@ const hasSaleItemUnitTypeColumn = saleItemColumns.some((col) => col.name === 'un
 const godownStockColumns = db.prepare(`PRAGMA table_info(godown_stock)`).all();
 const hasGodownStockUnitTypeColumn = godownStockColumns.some((col) => col.name === 'unit_type');
 const hasGodownStockLastBillNoColumn = godownStockColumns.some((col) => col.name === 'last_purchase_bill_no');
+const hasGodownStockAgentCommissionColumn = godownStockColumns.some((col) => col.name === 'agent_commission');
+
+const rmtColumns = db.prepare(`PRAGMA table_info(raw_material_transactions)`).all();
+const hasPurchasePlaceColumn = rmtColumns.some((col) => col.name === 'purchase_place');
+if (hasPurchasePlaceColumn) {
+  db.prepare(`ALTER TABLE raw_material_transactions RENAME COLUMN purchase_place TO product_details`).run();
+}
 
 if (!hasPaymentIdColumn) {
   db.prepare(`ALTER TABLE ledger ADD COLUMN payment_id INTEGER`).run();
@@ -499,6 +506,10 @@ if (!hasGodownStockUnitTypeColumn) {
 
 if (!hasGodownStockLastBillNoColumn) {
   db.prepare(`ALTER TABLE godown_stock ADD COLUMN last_purchase_bill_no TEXT`).run();
+}
+
+if (!hasGodownStockAgentCommissionColumn) {
+  db.prepare(`ALTER TABLE godown_stock ADD COLUMN agent_commission REAL NOT NULL DEFAULT 0`).run();
 }
 
 if (!hasPurchaseBillNoColumn) {

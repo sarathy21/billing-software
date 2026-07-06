@@ -88,7 +88,7 @@ function addParty(data) {
 }
 
 function getParties() {
-  return db.prepare(`SELECT * FROM parties ORDER BY id DESC`).all();
+  return db.prepare(`SELECT * FROM parties ORDER BY lower(name) ASC, id DESC`).all();
 }
 
 function updateParty(id, data) {
@@ -165,7 +165,7 @@ function searchParties(query) {
   const stmt = db.prepare(`
     SELECT * FROM parties
     WHERE name LIKE ? OR city LIKE ? OR state LIKE ? OR phone LIKE ? OR address LIKE ?
-    ORDER BY id DESC
+    ORDER BY lower(name) ASC, id DESC
   `);
   return stmt.all(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
 }

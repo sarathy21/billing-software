@@ -2,21 +2,21 @@ const db = require('../database/db');
 
 const insertRawMaterialTxnStmt = db.prepare(
   `INSERT INTO raw_material_transactions (
-      date, party_id, entry_type, product_name, quantity, unit_type, rate, purchase_place, notes
+      date, party_id, entry_type, product_name, quantity, unit_type, rate, product_details, notes
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 );
 
 const updateRawMaterialTxnStmt = db.prepare(
   `UPDATE raw_material_transactions
    SET date = ?, party_id = ?, entry_type = ?, product_name = ?, quantity = ?, unit_type = ?,
-       rate = ?, purchase_place = ?, notes = ?
+       rate = ?, product_details = ?, notes = ?
    WHERE id = ?`
 );
 
 const deleteRawMaterialTxnStmt = db.prepare(`DELETE FROM raw_material_transactions WHERE id = ?`);
 
 const getRawMaterialTxnByIdStmt = db.prepare(
-  `SELECT id, date, party_id, entry_type, product_name, quantity, unit_type, rate, purchase_place, notes
+  `SELECT id, date, party_id, entry_type, product_name, quantity, unit_type, rate, product_details, notes
    FROM raw_material_transactions
    WHERE id = ?`
 );
@@ -47,14 +47,14 @@ const getRawMaterialTransactionsStmt = db.prepare(
           rt.quantity,
           rt.unit_type,
           rt.rate,
-          COALESCE(rt.purchase_place, '') AS purchase_place,
+          COALESCE(rt.product_details, '') AS product_details,
           COALESCE(rt.notes, '') AS notes
    FROM raw_material_transactions rt
    JOIN parties p ON p.id = rt.party_id
    WHERE (
       rt.product_name LIKE ?
       OR p.name LIKE ?
-      OR COALESCE(rt.purchase_place, '') LIKE ?
+      OR COALESCE(rt.product_details, '') LIKE ?
    )
    AND (? = '' OR rt.entry_type = ?)
    ORDER BY rt.date DESC, rt.id DESC`
@@ -144,9 +144,9 @@ function normalizePayload(data = {}, fallback = null) {
   const quantity = Number(data.quantity ?? fallback?.quantity);
   const unitType = normalizeUnitType(data.unit_type ?? fallback?.unit_type);
   const inputRate = Number(data.rate ?? fallback?.rate ?? 0);
-  const inputPlace = String(data.purchase_place ?? fallback?.purchase_place ?? '').trim();
+  const inputDetails = String(data.product_details ?? fallback?.product_details ?? '').trim();
   const rate = entryType === 'OUT' ? 0 : inputRate;
-  const purchasePlace = entryType === 'OUT' ? '' : inputPlace;
+  const productDetails = entryType === 'OUT' ? '' : inputDetails;
   const notes = String(data.notes ?? fallback?.notes ?? '').trim();
 
   return {
@@ -157,7 +157,7 @@ function normalizePayload(data = {}, fallback = null) {
     quantity,
     unitType,
     rate,
-    purchasePlace,
+    productDetails,
     notes
   };
 }
@@ -306,6 +306,24 @@ function deleteRawMaterialTransaction(id) {
   }
 }
 
+function updateRawMaterialProductName(oldName, newName) {
+  try {
+    const result = db.prepare(`UPDATE raw_material_transactions SET product_name = ? WHERE product_name = ?`).run(String(newName).trim(), String(oldName).trim());
+    return { success: true, changes: result.changes };
+  } catch (error) {
+    return { success: false, message: error.message || 'Unable to update product name.' };
+  }
+}
+
+function deleteRawMaterialProduct(productName) {
+  try {
+    const result = db.prepare(`DELETE FROM raw_material_transactions WHERE product_name = ?`).run(String(productName).trim());
+    return { success: true, changes: result.changes };
+  } catch (error) {
+    return { success: false, message: error.message || 'Unable to delete product.' };
+  }
+}
+
 function getRawMaterialTransactions(filters = {}) {
   try {
     const query = String(filters.query || '').trim();
@@ -357,6 +375,8 @@ module.exports = {
   addRawMaterialTransaction,
   updateRawMaterialTransaction,
   deleteRawMaterialTransaction,
+  updateRawMaterialProductName,
+  deleteRawMaterialProduct,
   getRawMaterialTransactions,
   getRawMaterialStock,
   getRawMaterialProducts

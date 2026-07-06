@@ -714,7 +714,7 @@ function getStock() {
               s.total_boxes, s.total_pieces
        FROM stock s
        JOIN products p ON p.id = s.product_id
-       ORDER BY p.name ASC`
+       ORDER BY lower(p.name) ASC`
     );
     return stmt.all();
   } catch (_error) {
@@ -889,7 +889,7 @@ function getGodownStock(godownId, query = '') {
        FROM godown_stock gs
        JOIN products p ON p.id = gs.product_id
        WHERE gs.godown_id = ? AND p.name LIKE ?
-       ORDER BY p.name ASC`
+       ORDER BY lower(p.name) ASC`
     );
 
     return stmt.all(id, searchTerm).map((row) => {
@@ -916,7 +916,7 @@ function getGodownStock(godownId, query = '') {
 
 function getProducts() {
   try {
-    const stmt = db.prepare(`SELECT id, name, rate FROM products ORDER BY name ASC`);
+    const stmt = db.prepare(`SELECT id, name, rate FROM products ORDER BY lower(name) ASC`);
     return stmt.all();
   } catch (_error) {
     return [];
