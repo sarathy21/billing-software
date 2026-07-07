@@ -77,5 +77,13 @@ contextBridge.exposeInMainWorld('api', {
   exportSalesCsv: () => ipcRenderer.invoke('export-sales-csv'),
   exportPurchasesCsv: () => ipcRenderer.invoke('export-purchases-csv'),
   importPartiesCsv: () => ipcRenderer.invoke('import-parties-csv'),
-  savePdf: (payload) => ipcRenderer.invoke('save-pdf', payload)
+  savePdf: (payload) => ipcRenderer.invoke('save-pdf', payload),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  getCurrentVersion: () => ipcRenderer.invoke('get-current-version'),
+  getLatestVersion: () => ipcRenderer.invoke('get-latest-version'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url),
+  onUpdateStatus: (callback) => ipcRenderer.on('update-status', (_event, value) => callback(value)),
+  onLatestVersion: (callback) => ipcRenderer.on('latest-version', (_event, value) => callback(value)),
+  onDownloadProgress: (callback) => ipcRenderer.on('download-progress', (_event, value) => callback(value))
 });

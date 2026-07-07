@@ -1298,6 +1298,38 @@
             <button onclick="exportLedgerCsv()" class="bg-indigo-700 text-white px-4 py-2 rounded">Export Ledger CSV</button>
             <button onclick="importPartiesCsv()" class="bg-amber-700 text-white px-4 py-2 rounded">Import Parties CSV</button>
           </div>
+          
+          <div class="mt-8 pt-6 border-t border-gray-200">
+            <h3 class="text-xl font-semibold mb-4">Software Updates</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <div>
+                <p class="text-sm text-gray-500">Current Version</p>
+                <p id="appCurrentVersion" class="font-medium text-lg">1.0.2</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Latest Version</p>
+                <p id="appLatestVersion" class="font-medium text-lg">Unknown</p>
+              </div>
+            </div>
+            
+            <div class="mt-4 flex flex-col md:flex-row gap-4 items-start md:items-center">
+              <button id="btnCheckForUpdates" onclick="checkForUpdatesManually()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded transition">Check for Updates</button>
+              
+              <div id="updateStatusContainer" class="hidden flex-1 w-full bg-gray-50 p-3 rounded border">
+                <p id="updateStatusText" class="text-sm font-medium text-gray-700 mb-2">Checking for updates...</p>
+                
+                <div id="updateProgressWrapper" class="hidden w-full bg-gray-200 rounded-full h-2.5 mb-1 mt-2">
+                  <div id="updateProgressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                
+                <div id="updateActionsWrapper" class="hidden mt-3 flex flex-wrap gap-2">
+                  <button id="btnRestartForUpdate" onclick="window.api.installUpdate()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium">Restart now</button>
+                  <button id="btnFallbackDownload" onclick="window.api.openExternalUrl('https://github.com/sarathy21/billing-software/releases/latest')" class="hidden bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-medium">Download Latest Version</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
         </div>
       </section>
 

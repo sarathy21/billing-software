@@ -337,13 +337,26 @@ function configureAutoUpdater() {
   updater.autoDownload = true;
   updater.autoInstallOnAppQuit = true;
 
+  const sendToRenderer = (channel, ...args) => {
+    const wins = BrowserWindow.getAllWindows();
+    if (wins.length > 0 && wins[0]) {
+      wins[0].webContents.send(channel, ...args);
+    }
+  };
+
   updater.on('checking-for-update', () => {
-    console.log('[updater] Checking for updates...');
+    console.log('Checking update');
+    sendToRenderer('update-status', 'Checking for updates...');
   });
 
   updater.on('update-available', (info) => {
-    console.log(`[updater] Update available: ${info.version}`);
+    console.log('Update available');
+    console.log('Downloading');
     latestCheckedVersion = info.version;
+    sendToRenderer('latest-version', info.version);
+    sendToRenderer('update-status', `Version ${info.version} is available. Downloading...`);
+    // Preserve existing dialog if needed, but since we are showing in UI, 
+    // it's better to keep it as requested to preserve background flow.
     dialog.showMessageBox({
       type: 'info',
       title: 'Update Available',
@@ -352,6 +365,7 @@ function configureAutoUpdater() {
   });
 
   updater.on('download-progress', (progressObj) => {
+    sendToRenderer('download-progress', progressObj.percent);
     const wins = BrowserWindow.getAllWindows();
     if (wins.length > 0 && wins[0]) {
       wins[0].setProgressBar(progressObj.percent / 100);
@@ -359,18 +373,23 @@ function configureAutoUpdater() {
   });
 
   updater.on('update-not-available', (info) => {
-    console.log('[updater] No update available.');
+    console.log('No update');
+    sendToRenderer('update-status', 'You are already using the latest version.');
     if (info && info.version) {
       latestCheckedVersion = info.version;
+      sendToRenderer('latest-version', info.version);
     }
   });
 
   updater.on('error', (error) => {
-    console.error('[updater] Error:', error && error.message ? error.message : error);
+    console.error('Errors:', error && error.message ? error.message : error);
+    sendToRenderer('update-status', 'Update error. Please try again later.');
   });
 
   updater.on('update-downloaded', async (info) => {
     try {
+      console.log('Downloaded');
+      sendToRenderer('update-status', 'Update downloaded. Restart now?');
       const wins = BrowserWindow.getAllWindows();
       if (wins.length > 0 && wins[0]) {
         wins[0].setProgressBar(-1);
@@ -386,7 +405,7 @@ function configureAutoUpdater() {
       });
 
       if (result.response === 0) {
-        console.log('[updater] Restarting to apply downloaded update...');
+        console.log('Installing');
         setImmediate(() => {
           updater.quitAndInstall(false, true);
         });
@@ -432,6 +451,41 @@ function startAutoUpdateChecks() {
     checkForUpdatesIfOnline();
   }, UPDATE_CHECK_INTERVAL_MS);
 }
+
+ipcMain.handle('check-for-updates', async () => {
+  const online = await hasInternetConnection();
+  if (!online) {
+    return { success: false, message: 'Unable to check for updates. Please check your internet connection.' };
+  }
+  if (!app.isPackaged) {
+    return { success: false, message: 'Auto-update is disabled in development mode.' };
+  }
+  try {
+    const updater = getAutoUpdater();
+    await updater.checkForUpdates();
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: 'Update server unavailable. Please try again later.' };
+  }
+});
+
+ipcMain.handle('get-current-version', () => {
+  return app.getVersion();
+});
+
+ipcMain.handle('get-latest-version', () => {
+  return latestCheckedVersion || 'Unknown';
+});
+
+ipcMain.handle('install-update', () => {
+  console.log('Installing');
+  const updater = getAutoUpdater();
+  updater.quitAndInstall(false, true);
+});
+
+ipcMain.handle('open-external-url', (_event, url) => {
+  shell.openExternal(url);
+});
 
 ipcMain.handle('add-party', async (_event, data) => {
   return partyService.addParty(data);

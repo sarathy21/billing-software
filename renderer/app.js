@@ -5806,6 +5806,7 @@ window.onload = async () => {
     await refreshSalesReturns();
     await refreshLabourAttendance();
     await loadLedger();
+    if (typeof initUpdatesUI === 'function') await initUpdatesUI();
 
     showView('transaction');
 
@@ -5832,3 +5833,87 @@ document.addEventListener('keydown', function(event) {
     }
   }
 });
+
+window.checkForUpdatesManually = async () => {
+  const btn = document.getElementById('btnCheckForUpdates');
+  const container = document.getElementById('updateStatusContainer');
+  const statusText = document.getElementById('updateStatusText');
+  const progressWrapper = document.getElementById('updateProgressWrapper');
+  const actionsWrapper = document.getElementById('updateActionsWrapper');
+
+  btn.disabled = true;
+  btn.classList.add('opacity-50', 'cursor-not-allowed');
+  container.classList.remove('hidden');
+  progressWrapper.classList.add('hidden');
+  actionsWrapper.classList.add('hidden');
+  statusText.textContent = 'Checking for updates...';
+
+  const result = await window.api.checkForUpdates();
+  if (!result || !result.success) {
+    statusText.textContent = result?.message || 'Update check failed.';
+    btn.disabled = false;
+    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+  }
+};
+
+if (window.api && window.api.onUpdateStatus) {
+  window.api.onUpdateStatus((status) => {
+    const container = document.getElementById('updateStatusContainer');
+    const statusText = document.getElementById('updateStatusText');
+    const progressWrapper = document.getElementById('updateProgressWrapper');
+    const actionsWrapper = document.getElementById('updateActionsWrapper');
+    const btn = document.getElementById('btnCheckForUpdates');
+
+    if (container) container.classList.remove('hidden');
+    if (statusText) statusText.textContent = status;
+
+    if (status && status.toLowerCase().includes('downloaded')) {
+      if (progressWrapper) progressWrapper.classList.add('hidden');
+      if (actionsWrapper) actionsWrapper.classList.remove('hidden');
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    } else if (status && (status.toLowerCase().includes('error') || status.toLowerCase().includes('latest version'))) {
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+      if (status.toLowerCase().includes('error')) {
+        const fallbackBtn = document.getElementById('btnFallbackDownload');
+        const restartBtn = document.getElementById('btnRestartForUpdate');
+        if (actionsWrapper) actionsWrapper.classList.remove('hidden');
+        if (fallbackBtn) fallbackBtn.classList.remove('hidden');
+        if (restartBtn) restartBtn.classList.add('hidden');
+      }
+    }
+  });
+}
+
+if (window.api && window.api.onLatestVersion) {
+  window.api.onLatestVersion((version) => {
+    const el = document.getElementById('appLatestVersion');
+    if (el) el.textContent = version;
+  });
+}
+
+if (window.api && window.api.onDownloadProgress) {
+  window.api.onDownloadProgress((percent) => {
+    const progressWrapper = document.getElementById('updateProgressWrapper');
+    const progressBar = document.getElementById('updateProgressBar');
+    if (progressWrapper) progressWrapper.classList.remove('hidden');
+    if (progressBar) progressBar.style.width = `${percent}%`;
+  });
+}
+
+async function initUpdatesUI() {
+  if (!window.api || !window.api.getCurrentVersion) return;
+  const currentVersion = await window.api.getCurrentVersion();
+  const latestVersion = await window.api.getLatestVersion();
+  
+  const curEl = document.getElementById('appCurrentVersion');
+  const latEl = document.getElementById('appLatestVersion');
+  
+  if (curEl) curEl.textContent = currentVersion || 'Unknown';
+  if (latEl) latEl.textContent = latestVersion || 'Unknown';
+}

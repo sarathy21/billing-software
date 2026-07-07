@@ -80,3 +80,28 @@ This repository now includes:
 - Ledger flow: auto entries from payments, purchases, sales, plus manual debit and credit rows.
 
 Keep this document updated whenever new pages, services, or ledger rules are added.
+
+## Release Process
+
+When a new version of the software is ready, follow this process to publish an update that clients will download automatically.
+
+1. **Version Bump**: Increment the `version` field in `package.json` (e.g., from `1.0.2` to `1.0.3`).
+2. **Build**: Run the electron builder command which will automatically generate macOS (`.dmg`, `.zip`) and Windows (`.exe` NSIS installer) artifacts along with `latest.yml` and `latest-mac.yml` blockmaps.
+   ```bash
+   npm run build
+   ```
+3. **GitHub Release**:
+   - Create a new Release on the [GitHub Releases page](https://github.com/sarathy21/billing-software/releases).
+   - Ensure the tag name exactly matches the version in `package.json` (e.g., `v1.0.3` or `1.0.3`).
+   - Upload all the generated artifacts from the `dist/` folder:
+     - `billing-software Setup 1.0.3.exe`
+     - `billing-software-1.0.3-mac.zip`
+     - `billing-software-1.0.3.dmg`
+     - `latest.yml`
+     - `latest-mac.yml`
+4. **Publish**: Click "Publish release".
+5. **Testing**: 
+   - Open a client application running a lower version.
+   - Wait 10 seconds for the automatic background update, or go to **Settings -> Profile Settings -> Software Updates** and click **Check for Updates**.
+   - Verify the download progress appears and the application prompts to restart upon successful download.
+   - For update failures, a "Download Latest Version" fallback button will be shown allowing manual download from the release page.
