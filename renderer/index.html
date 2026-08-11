@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!DOCTYPE html><html><head>
   <title>Billing Software</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -105,11 +103,11 @@
             <table class="w-full text-sm">
               <thead class="bg-gray-200">
                 <tr>
-                  <th class="p-2 text-left">S.No</th>
-                  <th class="p-2 text-left">Party Name</th>
-                  <th class="p-2 text-left">Phone No.</th>
-                  <th class="p-2 text-left">City</th>
-                  <th class="p-2 text-left">Action</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">S.No</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Party Name</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Phone No.</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">City</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
                 </tr>
               </thead>
               <tbody id="transactionPartyTableBody"></tbody>
@@ -179,7 +177,7 @@
               </select>
             </div>
             <input id="purchaseSellingRate" type="number" step="0.01" placeholder="Selling Price" class="border p-2">
-            <input id="purchaseLineTotal" type="number" step="0.01" placeholder="Total" class="border p-2 bg-gray-100" readonly>
+            <input id="purchaseLineTotal" type="number" step="0.01" placeholder="Total" class="border p-2 bg-gray-100" readonly="">
             <button onclick="addPurchaseItem()" class="bg-indigo-600 text-white px-3 py-2 rounded">Add Item</button>
           </div>
         </div>
@@ -188,19 +186,19 @@
           <table class="w-full">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">S.No</th>
-                <th class="p-2">Particulars</th>
-                <th class="p-2 text-right">Case Count</th>
-                <th class="p-2 text-right">Per Qty/Case</th>
-                <th class="p-2">Pcs/Pkt</th>
-                <th class="p-2 text-right">Rate</th>
-                <th class="p-2 text-right">Packing Charge</th>
-                <th class="p-2 text-right">Transportation</th>
-                <th class="p-2 text-right">Agent Commission</th>
-                <th class="p-2 text-right">Discount</th>
-                <th class="p-2 text-right">Selling Price</th>
-                <th class="p-2 text-right">Total</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">S.No</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Particulars</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Case Count</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Per Qty/Case</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Pcs/Pkt</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Rate</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Packing Charge</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Transportation</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Agent Commission</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Discount</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Selling Price</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="purchaseItemsTableBody"></tbody>
@@ -220,21 +218,21 @@
           <table class="w-full">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Bill No</th>
-                <th class="p-2">Date</th>
-                <th class="p-2">Supplier</th>
-                <th class="p-2">Particulars</th>
-                <th class="p-2 text-right">Case Count</th>
-                <th class="p-2 text-right">Per Qty/Case</th>
-                <th class="p-2">Pcs/Pkt</th>
-                <th class="p-2 text-right">Rate</th>
-                <th class="p-2 text-right">Packing Charge</th>
-                <th class="p-2 text-right">Transportation</th>
-                <th class="p-2 text-right">Agent Commission</th>
-                <th class="p-2 text-right">Discount</th>
-                <th class="p-2 text-right">Selling Price</th>
-                <th class="p-2 text-right">Total</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Bill No</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Supplier</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Particulars</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Case Count</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Per Qty/Case</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Pcs/Pkt</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Rate</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Packing Charge</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Transportation</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Agent Commission</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Discount</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Selling Price</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="purchasesTableBody"></tbody>
@@ -299,7 +297,7 @@
 
           <div class="mt-3">
             <label class="block mb-1">Address (Auto from selected party)</label>
-            <textarea id="salePartyAddress" rows="2" class="border p-2 w-full bg-gray-50" readonly></textarea>
+            <textarea id="salePartyAddress" rows="2" class="border p-2 w-full bg-gray-50" readonly=""></textarea>
           </div>
 
           <h3 class="text-lg font-semibold mt-4 mb-2">Add Item</h3>
@@ -316,7 +314,7 @@
               <option value="Pkt">Pkt</option>
             </select>
             <input id="saleRate" type="number" step="0.01" placeholder="Rate" class="border p-2" oninput="calculateSaleLineTotal()">
-            <input id="saleLineTotal" type="number" step="0.01" placeholder="Total" class="border p-2 bg-gray-100" readonly>
+            <input id="saleLineTotal" type="number" step="0.01" placeholder="Total" class="border p-2 bg-gray-100" readonly="">
             <button onclick="addSaleItem()" class="bg-indigo-600 text-white px-3 py-2 rounded">Add Item</button>
           </div>
         </div>
@@ -325,13 +323,13 @@
           <table class="w-full">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Product</th>
-                <th class="p-2">Cases</th>
-                <th class="p-2">Qty/Case</th>
-                <th class="p-2">Quantity Type</th>
-                <th class="p-2 text-right">Rate</th>
-                <th class="p-2 text-right">Total</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Product</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Cases</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Qty/Case</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Quantity Type</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Rate</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="saleItemsTableBody"></tbody>
@@ -341,13 +339,13 @@
         <div class="bg-white p-4 rounded shadow mb-6 grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
           <div>
             <label class="block mb-1">Grand Total</label>
-            <input id="saleGrandTotal" class="border p-2 w-full bg-gray-100" readonly>
+            <input id="saleGrandTotal" class="border p-2 w-full bg-gray-100" readonly="">
           </div>
           <div>
             <div class="flex items-center justify-between mb-1">
               <span class="text-sm font-medium">Discount</span>
               <label class="toggle-switch">
-                <input id="saleUseDiscount" type="checkbox" checked onchange="recalculateSaleFinalTotal()">
+                <input id="saleUseDiscount" type="checkbox" checked="" onchange="recalculateSaleFinalTotal()">
                 <span class="toggle-slider"></span>
               </label>
             </div>
@@ -363,7 +361,7 @@
             <div class="flex items-center justify-between mb-1">
               <span class="text-sm font-medium">Transportation</span>
               <label class="toggle-switch">
-                <input id="saleUseTransport" type="checkbox" checked onchange="recalculateSaleFinalTotal()">
+                <input id="saleUseTransport" type="checkbox" checked="" onchange="recalculateSaleFinalTotal()">
                 <span class="toggle-slider"></span>
               </label>
             </div>
@@ -387,7 +385,7 @@
           </div>
           <div>
             <label class="block mb-1">Final Total</label>
-            <input id="saleFinalTotal" class="border p-2 w-full bg-gray-100" readonly>
+            <input id="saleFinalTotal" class="border p-2 w-full bg-gray-100" readonly="">
           </div>
           <div class="text-right">
             <button id="saleSubmitBtn" onclick="saveSaleInvoice()" class="bg-green-700 text-white px-4 py-2 rounded mr-2">Save Invoice</button>
@@ -401,11 +399,11 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-100 text-gray-700">
               <tr>
-                <th class="px-3 py-2 text-left">Bill No</th>
-                <th class="px-3 py-2 text-left">Date</th>
-                <th class="px-3 py-2 text-left">Party</th>
-                <th class="px-3 py-2 text-right">Total</th>
-                <th class="px-3 py-2 text-left">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Bill No</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Party</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="salesTableBody"></tbody>
@@ -441,12 +439,12 @@
             <table class="w-full">
               <thead class="bg-gray-200">
                 <tr>
-                  <th class="p-2">Product</th>
-                  <th class="p-2">Cases</th>
-                  <th class="p-2">Qty/Case</th>
-                  <th class="p-2">Quantity Type</th>
-                  <th class="p-2 text-right">Rate</th>
-                  <th class="p-2 text-right">Total</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Product</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Cases</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Qty/Case</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Quantity Type</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Rate</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
                 </tr>
               </thead>
               <tbody id="saleDetailItemsBody"></tbody>
@@ -498,12 +496,12 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Product</th>
-                <th class="p-2 text-right">Cases</th>
-                <th class="p-2 text-right">Qty/Case</th>
-                <th class="p-2">Quantity Type</th>
-                <th class="p-2 text-right">Rate</th>
-                <th class="p-2 text-right">Total</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Product</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Cases</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Qty/Case</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Quantity Type</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Rate</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
               </tr>
             </thead>
             <tbody id="purchaseReturnItemsBody"></tbody>
@@ -514,11 +512,11 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Bill No</th>
-                <th class="p-2">Date</th>
-                <th class="p-2">Party</th>
-                <th class="p-2 text-right">Total</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Bill No</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Party</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="purchaseReturnTableBody"></tbody>
@@ -564,12 +562,12 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Product</th>
-                <th class="p-2 text-right">Cases</th>
-                <th class="p-2 text-right">Qty/Case</th>
-                <th class="p-2">Quantity Type</th>
-                <th class="p-2 text-right">Rate</th>
-                <th class="p-2 text-right">Total</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Product</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Cases</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Qty/Case</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Quantity Type</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Rate</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
               </tr>
             </thead>
             <tbody id="salesReturnItemsBody"></tbody>
@@ -580,11 +578,11 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Bill No</th>
-                <th class="p-2">Date</th>
-                <th class="p-2">Party</th>
-                <th class="p-2 text-right">Total</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Bill No</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Party</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="salesReturnTableBody"></tbody>
@@ -601,10 +599,10 @@
               <table class="w-full text-sm">
                 <thead class="bg-gray-200 sticky top-0">
                   <tr>
-                    <th class="p-2 text-left">Name</th>
-                    <th class="p-2 text-left">Phone</th>
-                    <th class="p-2 text-left">City</th>
-                    <th class="p-2 text-left">View</th>
+                    <th class="px-4 py-3 align-middle font-semibold text-left">Name</th>
+                    <th class="px-4 py-3 align-middle font-semibold text-left">Phone</th>
+                    <th class="px-4 py-3 align-middle font-semibold text-left">City</th>
+                    <th class="px-4 py-3 align-middle font-semibold text-left">View</th>
                   </tr>
                 </thead>
                 <tbody id="partyIndexTableBody"></tbody>
@@ -642,13 +640,13 @@
                 <table class="w-full text-sm">
                   <thead class="bg-gray-100">
                     <tr>
-                      <th class="p-2 text-left">S.No</th>
-                      <th class="p-2 text-left">Date</th>
-                      <th class="p-2 text-left">Particulars</th>
-                      <th class="p-2 text-right">Per Ctn/Pcs</th>
-                      <th class="p-2 text-right">Box Count</th>
-                      <th class="p-2 text-right">Rate</th>
-                      <th class="p-2 text-right">Total</th>
+                      <th class="px-4 py-3 align-middle font-semibold text-left">S.No</th>
+                      <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                      <th class="px-4 py-3 align-middle font-semibold text-left">Particulars</th>
+                      <th class="px-4 py-3 align-middle font-semibold text-left">Per Ctn/Pcs</th>
+                      <th class="px-4 py-3 align-middle font-semibold text-left">Box Count</th>
+                      <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Rate</th>
+                      <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total</th>
                     </tr>
                   </thead>
                   <tbody id="partyTxnTableBody"></tbody>
@@ -728,13 +726,13 @@
           <table class="w-full">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Name</th>
-                <th class="p-2">City</th>
-                <th class="p-2">State</th>
-                <th class="p-2">Phone</th>
-                <th class="p-2">Address</th>
-                <th class="p-2">Feedback</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Name</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">City</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">State</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Phone</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Address</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Feedback</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="partyTable"></tbody>
@@ -792,11 +790,11 @@
           <table class="w-full">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Reason</th>
-                <th class="p-2">Profit or Loss</th>
-                <th class="p-2 text-right">Amount</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Reason</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Profit or Loss</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Amount</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="expenseTableBody"></tbody>
@@ -808,11 +806,11 @@
           <table class="w-full">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Month</th>
-                <th class="p-2 text-right">Profit</th>
-                <th class="p-2 text-right">Loss</th>
-                <th class="p-2 text-right">Net Value</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Month</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Profit</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Loss</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Net Value</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="monthlyReportBody"></tbody>
@@ -824,13 +822,13 @@
           <table class="w-full">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Name</th>
-                <th class="p-2 text-right">Purchase</th>
-                <th class="p-2 text-right">Sale</th>
-                <th class="p-2 text-right">Profit</th>
-                <th class="p-2 text-right">Loss</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Name</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Purchase</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Sale</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Profit</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Loss</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="dailyReportBody"></tbody>
@@ -863,11 +861,11 @@
           <table class="w-full text-sm">
             <thead class="bg-gradient-to-r from-slate-800 to-slate-700 text-white">
               <tr>
-                <th class="p-3 text-left">Date</th>
-                <th class="p-3 text-left">Party Name</th>
-                <th class="p-3 text-right">Amount</th>
-                <th class="p-3 text-left">Mode</th>
-                <th class="p-3 text-left">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Party Name</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Amount</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Mode</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="paymentsInTableBody" class="divide-y divide-slate-200"></tbody>
@@ -900,11 +898,11 @@
           <table class="w-full text-sm">
             <thead class="bg-gradient-to-r from-slate-800 to-slate-700 text-white">
               <tr>
-                <th class="p-3 text-left">Date</th>
-                <th class="p-3 text-left">Party Name</th>
-                <th class="p-3 text-right">Amount</th>
-                <th class="p-3 text-left">Mode</th>
-                <th class="p-3 text-left">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Party Name</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Amount</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Mode</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="paymentsOutTableBody" class="divide-y divide-slate-200"></tbody>
@@ -953,11 +951,11 @@
             <table class="w-full text-sm">
               <thead class="bg-gray-200">
                 <tr>
-                  <th class="p-2 text-left">S.No</th>
-                  <th class="p-2 text-left">Party Name</th>
-                  <th class="p-2 text-left">Phone</th>
-                  <th class="p-2 text-left">City</th>
-                  <th class="p-2 text-left">Action</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">S.No</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Party Name</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Phone</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">City</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
                 </tr>
               </thead>
               <tbody id="ledgerPartyTableBody"></tbody>
@@ -1017,26 +1015,26 @@
             <table class="w-full text-sm">
               <thead class="bg-gray-200">
                 <tr>
-                  <th class="p-2 text-left">Date</th>
-                  <th class="p-2 text-left">Particulars</th>
-                  <th class="p-2 text-right">Debit</th>
-                  <th class="p-2 text-right">Credit</th>
-                  <th class="p-2 text-left">Action</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Particulars</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Debit</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Credit</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
                 </tr>
               </thead>
               <tbody id="ledgerTableBody"></tbody>
               <tfoot class="bg-gray-100 font-semibold">
                 <tr>
-                  <td class="p-2" colspan="2">Totals</td>
+                  <td class="px-4 py-3 align-middle" colspan="2">Totals</td>
                   <td id="ledgerTotalDebit" class="p-2 text-right">0.00</td>
                   <td id="ledgerTotalCredit" class="p-2 text-right">0.00</td>
-                  <td class="p-2"></td>
+                  <td class="px-4 py-3 align-middle"></td>
                 </tr>
                 <tr class="bg-gray-50">
                   <td id="ledgerBalanceLabel" class="p-2" colspan="2">Balance</td>
                   <td id="ledgerClosingDebit" class="p-2 text-right text-gray-700">0.00</td>
                   <td id="ledgerClosingCredit" class="p-2 text-right text-gray-700">0.00</td>
-                  <td class="p-2"></td>
+                  <td class="px-4 py-3 align-middle"></td>
                 </tr>
               </tfoot>
             </table>
@@ -1082,20 +1080,20 @@
             <table class="w-full text-sm">
               <thead class="bg-blue-700 text-white">
                 <tr>
-                  <th class="p-2">Date</th>
-                  <th class="p-2">Bill No</th>
-                  <th class="p-2">Product Name</th>
-                  <th class="p-2 text-right">Cases</th>
-                  <th class="p-2 text-right">Qty/Case</th>
-                  <th class="p-2">Quantity Type</th>
-                  <th class="p-2 text-right">Available Stock</th>
-                  <th class="p-2 text-right">Purchase Rate</th>
-                  <th class="p-2 text-right">Packing Charge</th>
-                  <th class="p-2 text-right">Transport Charge</th>
-                  <th class="p-2 text-right">Commission</th>
-                  <th class="p-2 text-right">Selling Rate</th>
-                  <th class="p-2 text-right">Total Value</th>
-                  <th class="p-2">Action</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Bill No</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Product Name</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Cases</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Qty/Case</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Quantity Type</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Available Stock</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Purchase Rate</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Packing Charge</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-left">Transport Charge</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Commission</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Selling Rate</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total Value</th>
+                  <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
                 </tr>
               </thead>
               <tbody id="stockTableBody" class="divide-y divide-gray-200"></tbody>
@@ -1115,13 +1113,13 @@
           <table class="w-full text-sm">
             <thead class="bg-blue-700 text-white">
               <tr>
-                <th class="p-2">Product Name</th>
-                <th class="p-2">Quantity Type</th>
-                <th class="p-2 text-right">Product IN</th>
-                <th class="p-2 text-right">Product OUT</th>
-                <th class="p-2 text-right">Balance Qty</th>
-                <th class="p-2">Last Updated</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Product Name</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Quantity Type</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Product IN</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Product OUT</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Balance Qty</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Last Updated</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="rawMaterialStockTableBody"></tbody>
@@ -1192,7 +1190,7 @@
               </select>
             </div>
             <div id="rawMaterialRateWrap">
-              <label class="block mb-1">Rate Per (Type)</label>
+              <label class="block mb-1">Purchase Rate</label>
               <input id="rawMaterialRate" type="number" step="0.01" min="0" class="border p-2 w-full" placeholder="0.00">
             </div>
             <div id="rawMaterialPlaceWrap" class="md:col-span-2">
@@ -1211,20 +1209,20 @@
           <input id="rawMaterialTxnSearch" class="border p-2 w-full" placeholder="Search by product details / party / place" oninput="refreshRawMaterialTransactions()">
         </div>
 
-        <div class="bg-white shadow rounded overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-gray-200">
+        <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-x-auto">
+          <table class="w-full table-auto text-sm text-gray-700">
+            <thead class="bg-gray-50 text-xs uppercase font-semibold text-gray-600 sticky top-0 z-10 border-b border-gray-200">
               <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Product Details</th>
-                <th class="p-2 text-right">Quantity</th>
-                <th class="p-2">Quantity Type</th>
-                <th class="p-2 text-right">Rate Per (Type)</th>
-                <th class="p-2">Product Place</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Product Name</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Quantity</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Quantity Type</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Purchase Rate</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px] max-w-xs whitespace-normal break-words">Product Details</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
-            <tbody id="rawMaterialTxnTableBody"></tbody>
+            <tbody id="rawMaterialTxnTableBody" class="divide-y divide-gray-100 bg-white"></tbody>
           </table>
         </div>
       </section>
@@ -1240,11 +1238,11 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Product</th>
-                <th class="p-2 text-right">Received</th>
-                <th class="p-2 text-right">Used</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Product</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Received</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Used</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="rawMaterialLedgerBody"></tbody>
@@ -1253,25 +1251,27 @@
       </section>
 
       <section id="crackersView" class="hidden">
-        <h2 class="text-2xl font-semibold mb-4">Cracker Purchase Rate</h2>
-        <div class="bg-white p-4 rounded shadow mb-4">
-          <input id="rateSearchQuery" oninput="refreshPurchaseRates()" placeholder="Search by product name" class="border p-2 w-full">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Cracker Purchase Rate</h2>
+        <div class="bg-white shadow-sm rounded-lg border border-gray-200 mb-4">
+          <input id="rateSearchQuery" oninput="refreshPurchaseRates()" placeholder="Search by product name..." class="w-full px-4 py-3 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
         </div>
-        <div class="bg-white shadow rounded overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-200">
+        <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-x-auto">
+          <table class="w-full table-auto text-sm text-gray-700">
+            <thead class="bg-gray-50 text-xs uppercase font-semibold text-gray-600 sticky top-0 z-10 border-b border-gray-200">
               <tr>
-                <th class="p-2">Product</th>
-                <th class="p-2">Supplier</th>
-                <th class="p-2 text-right">Rate</th>
-                <th class="p-2 text-right">Packing Charges</th>
-                <th class="p-2 text-right">Transportation Charge</th>
-                <th class="p-2">Agent Name</th>
-                <th class="p-2 text-right">Agent commison</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left min-w-[200px]">Product</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Quantity Type</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Purchase Rate</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Transport Charge</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Agent Commission</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Packing Charges</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Supplier Name</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Selling Price</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
-            <tbody id="rateTableBody"></tbody>
+            <tbody id="rateTableBody" class="divide-y divide-gray-100 bg-white"></tbody>
           </table>
         </div>
       </section>
@@ -1343,7 +1343,7 @@
             <input id="labourName" class="border p-2" placeholder="Name">
             <input id="labourPerHourCost" type="number" step="0.01" min="0" class="border p-2" placeholder="Per Hour Cost" oninput="recalculateLabourSalary()">
             <input id="labourTotalHours" type="number" step="0.01" min="0" class="border p-2" placeholder="Total Hours" oninput="recalculateLabourSalary()">
-            <input id="labourTotalSalary" type="number" step="0.01" min="0" class="border p-2 bg-gray-100" placeholder="Total Salary" readonly>
+            <input id="labourTotalSalary" type="number" step="0.01" min="0" class="border p-2 bg-gray-100" placeholder="Total Salary" readonly="">
           </div>
           <textarea id="labourNotes" class="border p-2 w-full mt-3" rows="2" placeholder="Notes (optional)"></textarea>
           <div class="mt-3">
@@ -1357,12 +1357,12 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Name</th>
-                <th class="p-2 text-right">Per Hour Cost</th>
-                <th class="p-2 text-right">Total Hours</th>
-                <th class="p-2 text-right">Total Salary</th>
-                <th class="p-2">Action</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-28">Date</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Name</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Per Hour Cost</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total Hours</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total Salary</th>
+                <th class="px-4 py-3 align-middle font-semibold text-center whitespace-nowrap w-32">Action</th>
               </tr>
             </thead>
             <tbody id="labourTableBody"></tbody>
@@ -1374,10 +1374,10 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-200">
               <tr>
-                <th class="p-2">Week End (Saturday)</th>
-                <th class="p-2 text-right">Rows</th>
-                <th class="p-2 text-right">Total Hours</th>
-                <th class="p-2 text-right">Total Salary</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Week End (Saturday)</th>
+                <th class="px-4 py-3 align-middle font-semibold text-left">Rows</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total Hours</th>
+                <th class="px-4 py-3 align-middle font-semibold text-right whitespace-nowrap">Total Salary</th>
               </tr>
             </thead>
             <tbody id="labourWeeklyBody"></tbody>
@@ -1394,5 +1394,6 @@
   <div id="globalToast" class="hidden fixed bottom-4 right-4 z-50 bg-green-700 text-white px-4 py-2 rounded shadow"></div>
 
   <script src="app.js"></script>
-</body>
-</html>
+
+
+</body></html>

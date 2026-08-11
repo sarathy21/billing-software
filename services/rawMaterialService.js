@@ -146,7 +146,7 @@ function normalizePayload(data = {}, fallback = null) {
   const inputRate = Number(data.rate ?? fallback?.rate ?? 0);
   const inputDetails = String(data.product_details ?? fallback?.product_details ?? '').trim();
   const rate = entryType === 'OUT' ? 0 : inputRate;
-  const productDetails = entryType === 'OUT' ? '' : inputDetails;
+  const productDetails = inputDetails;
   const notes = String(data.notes ?? fallback?.notes ?? '').trim();
 
   return {
@@ -203,7 +203,7 @@ const addRawMaterialTransactionTxn = db.transaction((data) => {
     payload.quantity,
     payload.unitType,
     payload.rate,
-    payload.purchasePlace,
+    payload.productDetails,
     payload.notes
   );
 
@@ -250,7 +250,7 @@ const updateRawMaterialTransactionTxn = db.transaction((id, data) => {
     payload.quantity,
     payload.unitType,
     payload.rate,
-    payload.purchasePlace,
+    payload.productDetails,
     payload.notes,
     txnId
   );
